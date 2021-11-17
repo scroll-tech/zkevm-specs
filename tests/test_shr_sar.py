@@ -1,7 +1,7 @@
 import secrets
 
 from src.zkevm_specs.encoding import u256_to_u8s, U256, u8s_to_u64s, U8
-from src.zkevm_specs.opcode.shr_sar import check_shr, check_sar, BitslevelTable, Pow64Table
+from src.zkevm_specs.opcode.shr_sar import check_shr, check_sar, BitslevelTable, Pow64Table, BitshighTable
 
 
 def generate_high(shift_mod_by_64_div_by_8, shift_mod_by_8):
@@ -57,8 +57,8 @@ def result_generate(a, shift):
             a_slice_front,
             a_slice_back,
             shift_div_by_64,
-            shift_mod_by_64_div_by_8,
             shift_mod_by_64_decpow,
+            shift_mod_by_64_div_by_8,
             shift_mod_by_64_pow,
             shift_mod_by_8,
             is_sar,
@@ -70,14 +70,15 @@ def test_shr_sar():
     a = secrets.randbelow(2 ** 256)
     bitsleveltable = BitslevelTable()
     pow64table = Pow64Table()
+    bitshightable = BitshighTable()
     a_bits = len(bin(a)) - 2
     shift = secrets.randbelow(a_bits)
     (b,
      a_slice_front,
      a_slice_back,
      shift_div_by_64,
-     shift_mod_by_64_div_by_8,
      shift_mod_by_64_decpow,
+     shift_mod_by_64_div_by_8,
      shift_mod_by_64_pow,
      shift_mod_by_8,
      is_sar,
@@ -99,7 +100,8 @@ def test_shr_sar():
                   high_pow,
                   m256,
                   bitsleveltable,
-                  pow64table)
+                  pow64table,
+                  bitshightable)
     else:
         check_sar(u256_to_u8s(U256(a)),
                   b,
@@ -107,12 +109,13 @@ def test_shr_sar():
                   a_slice_front,
                   a_slice_back,
                   shift_div_by_64,
-                  shift_mod_by_64_div_by_8,
                   shift_mod_by_64_decpow,
+                  shift_mod_by_64_div_by_8,
                   shift_mod_by_64_pow,
                   shift_mod_by_8,
                   is_sar,
                   high_pow,
                   m256,
                   bitsleveltable,
-                  pow64table)
+                  pow64table,
+                  bitshightable)
