@@ -9,6 +9,7 @@ from zkevm_specs.evm import (
     RW,
     AccountFieldTag,
     CallContextFieldTag,
+    Block,
     Transaction,
     Bytecode,
 )
@@ -144,6 +145,7 @@ def test_begin_tx(tx: Transaction, result: bool):
 
     verify_steps(
         rlc_store=rlc_store,
+        block=Block(),
         tables=tables,
         steps=[
             StepState(

@@ -2,7 +2,7 @@ from __future__ import annotations
 from enum import IntEnum, auto
 from typing import Optional, Sequence, Tuple, Union
 
-from ..util import Array4, Array8, linear_combine, RLCStore
+from ..util import Array4, Array8, linear_combine, RLCStore, MAX_N_BYTES
 from .opcode import Opcode
 from .step import StepState
 from .table import (
@@ -14,6 +14,7 @@ from .table import (
     RW,
     RWTableTag,
 )
+from .typing import Block
 
 
 class ConstraintUnsatFailure(Exception):
@@ -47,6 +48,7 @@ class Transition:
 
 class Instruction:
     rlc_store: RLCStore
+    block: Block
     tables: Tables
     curr: StepState
     next: StepState
@@ -58,8 +60,9 @@ class Instruction:
     stack_pointer_offset: int = 0
     state_write_counter_offset: int = 0
 
-    def __init__(self, rlc_store: RLCStore, tables: Tables, curr: StepState, next: StepState) -> None:
+    def __init__(self, rlc_store: RLCStore, block: Block, tables: Tables, curr: StepState, next: StepState) -> None:
         self.rlc_store = rlc_store
+        self.block = block
         self.tables = tables
         self.curr = curr
         self.next = next
@@ -233,15 +236,16 @@ class Instruction:
     def bytes_to_rlc(self, bytes: Sequence[int]) -> int:
         return self.rlc_store.to_rlc(bytes)
 
+    def bytes_to_int(self, bytes: Sequence[int]) -> int:
+        assert len(bytes) <= MAX_N_BYTES, "too many bytes to composite an integer in field"
+        return linear_combine(bytes, 256)
+
     def int_to_bytes(self, value: int, n_bytes: int) -> Sequence[int]:
+        assert n_bytes <= MAX_N_BYTES, "too many bytes to composite an integer in field"
         try:
             return value.to_bytes(n_bytes, "little")
         except OverflowError:
             raise ConstraintUnsatFailure(f"{value} is too many bytes to fit {n_bytes} bytes")
-
-    def bytes_to_int(self, bytes: Sequence[int]) -> int:
-        assert len(bytes) <= 31, "too many bytes to composite an integer in field"
-        return linear_combine(bytes, 256)
 
     def byte_range_lookup(self, input: int):
         self.tables.fixed_lookup([FixedTableTag.Range256, input, 0, 0])

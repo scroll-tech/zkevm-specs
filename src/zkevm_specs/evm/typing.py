@@ -4,6 +4,34 @@ from ..util import U64, U160, U256, Array4, RLCStore, keccak256
 from .table import TxContextFieldTag
 
 
+class Block:
+    coinbase: U160
+    gas_limit: U64
+    block_number: U256
+    time: U256
+    difficulty: U256
+    base_fee: U256
+    previous_256_block_hashes: Sequence[U256]
+
+    def __init__(
+        self,
+        coinbase: U160 = 0x10,
+        gas_limit: U64 = int(15e6),
+        block_number: U256 = 0,
+        time: U256 = 0,
+        difficulty: U256 = 0,
+        base_fee: U256 = int(1e9),
+        previous_256_block_hashes: Sequence[U256] = [],
+    ) -> None:
+        self.coinbase = coinbase
+        self.gas_limit = gas_limit
+        self.block_number = block_number
+        self.time = time
+        self.difficulty = difficulty
+        self.base_fee = base_fee
+        self.previous_256_block_hashes = previous_256_block_hashes
+
+
 class Transaction:
     id: int
     nonce: U64
