@@ -7,6 +7,7 @@ from .opcode import Opcode
 from .step import StepState
 from .table import (
     AccountFieldTag,
+    BlockContextFieldTag,
     CallContextFieldTag,
     Tables,
     FixedTableTag,
@@ -252,6 +253,9 @@ class Instruction:
 
     def fixed_lookup(self, tag: FixedTableTag, inputs: Sequence[int]) -> Array4:
         return self.tables.fixed_lookup([tag] + inputs)
+
+    def block_lookup(self, tag: BlockContextFieldTag, index: int = 0) -> int:
+        return self.tables.block_lookup([tag, index])[2]
 
     def tx_lookup(self, tx_id: int, tag: TxContextFieldTag, index: int = 0) -> int:
         return self.tables.tx_lookup([tx_id, tag, index])[3]

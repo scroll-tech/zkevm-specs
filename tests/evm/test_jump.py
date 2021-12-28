@@ -1,5 +1,6 @@
 import pytest
 
+from typing import Optional
 from zkevm_specs.evm import (
     ExecutionState,
     StepState,
@@ -11,28 +12,21 @@ from zkevm_specs.evm import (
     Block,
     Bytecode,
 )
-from zkevm_specs.util import rand_bytes, RLCStore
+from zkevm_specs.util import hex_to_word, rand_bytes, RLCStore
 
 
-TESTING_DATA = tuple(
-    [
-        (Opcode.PUSH1, bytes([1])),
-        (Opcode.PUSH2, bytes([2, 1])),
-        (Opcode.PUSH31, bytes([i for i in range(31, 0, -1)])),
-        (Opcode.PUSH32, bytes([i for i in range(32, 0, -1)])),
-    ]
-    + [(Opcode(Opcode.PUSH1 + i), rand_bytes(i + 1)) for i in range(32)]
-)
+TESTING_DATA = ((Opcode.JUMP, bytes([7])),)
 
 
-@pytest.mark.parametrize("opcode, value_be_bytes", TESTING_DATA)
-def test_push(opcode: Opcode, value_be_bytes: bytes):
+@pytest.mark.parametrize("opcode, dest_bytes", TESTING_DATA)
+def test_jump(opcode: Opcode, dest_bytes: bytes):
     rlc_store = RLCStore()
-
-    value = rlc_store.to_rlc(bytes(reversed(value_be_bytes)))
+    dest = rlc_store.to_rlc(bytes(reversed(dest_bytes)))
 
     block = Block()
-    bytecode = Bytecode(f"{opcode.hex()}{value_be_bytes.hex()}00")
+    # Jumps to PC=7
+    # PUSH1 80 PUSH1 40 PUSH1 07 JUMP JUMPDEST STOP
+    bytecode = Bytecode(f"6080604060{dest_bytes.hex()}565b00")
     bytecode_hash = rlc_store.to_rlc(bytecode.hash, 32)
 
     tables = Tables(
@@ -41,36 +35,35 @@ def test_push(opcode: Opcode, value_be_bytes: bytes):
         bytecode_table=set(bytecode.table_assignments(rlc_store)),
         rw_table=set(
             [
-                (8, RW.Write, RWTableTag.Stack, 1, 1023, value, 0, 0),
+                (9, RW.Read, RWTableTag.Stack, 1, 1021, dest, 0, 0),
             ]
         ),
     )
 
     verify_steps(
         rlc_store=rlc_store,
-        block=Block(),
         tables=tables,
         steps=[
             StepState(
-                execution_state=ExecutionState.PUSH,
-                rw_counter=8,
-                call_id=1,
-                is_root=True,
-                is_create=False,
-                opcode_source=bytecode_hash,
-                program_counter=0,
-                stack_pointer=1024,
-                gas_left=3,
-            ),
-            StepState(
-                execution_state=ExecutionState.STOP,
+                execution_state=ExecutionState.JUMP,
                 rw_counter=9,
                 call_id=1,
                 is_root=True,
                 is_create=False,
                 opcode_source=bytecode_hash,
-                program_counter=1 + len(value_be_bytes),
-                stack_pointer=1023,
+                program_counter=6,
+                stack_pointer=1021,
+                gas_left=8,
+            ),
+            StepState(
+                execution_state=ExecutionState.STOP,
+                rw_counter=10,
+                call_id=1,
+                is_root=True,
+                is_create=False,
+                opcode_source=bytecode_hash,
+                program_counter=int.from_bytes(dest_bytes, "little"),
+                stack_pointer=1022,
                 gas_left=0,
             ),
         ],
