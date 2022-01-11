@@ -22,40 +22,43 @@ from zkevm_specs.evm.execution.storage import (
 )
 from zkevm_specs.util import RLCStore, rand_address
 
-TESTING_DATA = (
-    (   # current_value == new_value, cold, not_reverted
-        Transaction(caller_address=rand_address(), callee_address=rand_address()),
-        bytes([i for i in range(32, 0, -1)]),
-        bytes([i for i in range(0, 32, 1)]),
-        0, -1,
-        False,
-        True,
-    ),
-    (   # current_value == new_value, warm, not_reverted
-        Transaction(caller_address=rand_address(), callee_address=rand_address()),
-        bytes([i for i in range(32, 0, -1)]),
-        bytes([i for i in range(0, 32, 1)]),
-        0, -1,
-        True,
-        True,
-    ),
-    (   # current_value == new_value, cold, reverted
-        Transaction(caller_address=rand_address(), callee_address=rand_address()),
-        bytes([i for i in range(32, 0, -1)]),
-        bytes([i for i in range(0, 32, 1)]),
-        0, -1,
-        False,
-        False,
-    ),
-    (   # current_value == new_value, warm, reverted
-        Transaction(caller_address=rand_address(), callee_address=rand_address()),
-        bytes([i for i in range(32, 0, -1)]),
-        bytes([i for i in range(0, 32, 1)]),
-        0, -1,
-        True,
-        False,
-    ),
-)
+def gen_test_case():
+    return (
+        (   # current_value == new_value, cold, not_reverted
+            Transaction(caller_address=rand_address(), callee_address=rand_address()),
+            bytes([i for i in range(32, 0, -1)]),
+            bytes([i for i in range(0, 32, 1)]),
+            0, -1,
+            False,
+            True,
+        ),
+        (   # current_value == new_value, warm, not_reverted
+            Transaction(caller_address=rand_address(), callee_address=rand_address()),
+            bytes([i for i in range(32, 0, -1)]),
+            bytes([i for i in range(0, 32, 1)]),
+            0, -1,
+            True,
+            True,
+        ),
+        (   # current_value == new_value, cold, reverted
+            Transaction(caller_address=rand_address(), callee_address=rand_address()),
+            bytes([i for i in range(32, 0, -1)]),
+            bytes([i for i in range(0, 32, 1)]),
+            0, -1,
+            False,
+            False,
+        ),
+        (   # current_value == new_value, warm, reverted
+            Transaction(caller_address=rand_address(), callee_address=rand_address()),
+            bytes([i for i in range(32, 0, -1)]),
+            bytes([i for i in range(0, 32, 1)]),
+            0, -1,
+            True,
+            False,
+        ),
+    )
+
+TESTING_DATA = gen_test_case()
 
 @pytest.mark.parametrize("tx, slot_be_bytes, value_be_bytes, value_prev_diff, original_value_diff, warm, result", TESTING_DATA)
 def test_sstore(
