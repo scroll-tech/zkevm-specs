@@ -39,7 +39,6 @@ def gen_test_case():
                     warm_case, # is_warm_storage_slot
                     persist_case, # is_not_reverted
                 ))
-    
     return tuple(gen_list)
 
 TESTING_DATA = gen_test_case()
