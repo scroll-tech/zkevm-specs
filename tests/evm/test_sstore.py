@@ -23,40 +23,24 @@ from zkevm_specs.evm.execution.storage import (
 from zkevm_specs.util import RLCStore, rand_address
 
 def gen_test_case():
-    return (
-        (   # current_value == new_value, cold, not_reverted
-            Transaction(caller_address=rand_address(), callee_address=rand_address()),
-            bytes([i for i in range(32, 0, -1)]),
-            bytes([i for i in range(0, 32, 1)]),
-            0, -1,
-            False,
-            True,
-        ),
-        (   # current_value == new_value, warm, not_reverted
-            Transaction(caller_address=rand_address(), callee_address=rand_address()),
-            bytes([i for i in range(32, 0, -1)]),
-            bytes([i for i in range(0, 32, 1)]),
-            0, -1,
-            True,
-            True,
-        ),
-        (   # current_value == new_value, cold, reverted
-            Transaction(caller_address=rand_address(), callee_address=rand_address()),
-            bytes([i for i in range(32, 0, -1)]),
-            bytes([i for i in range(0, 32, 1)]),
-            0, -1,
-            False,
-            False,
-        ),
-        (   # current_value == new_value, warm, reverted
-            Transaction(caller_address=rand_address(), callee_address=rand_address()),
-            bytes([i for i in range(32, 0, -1)]),
-            bytes([i for i in range(0, 32, 1)]),
-            0, -1,
-            True,
-            False,
-        ),
-    )
+    value_cases = [
+        [bytes([i for i in range(0, 32, 1)]), 0, -1], # value_prev == value
+    ]
+    warm_cases = [False, True]
+    persist_cases = [True, False]
+    gen_list = []
+    for value_case in value_cases:
+        for warm_case in warm_cases:
+            for persist_case in persist_cases:
+                gen_list.append((
+                    Transaction(caller_address=rand_address(), callee_address=rand_address()), # tx
+                    bytes([i for i in range(32, 0, -1)]), # storage_slot
+                    value_case[0], value_case[1], value_case[2], # new_value, value_prev_diff, original_value_diff
+                    warm_case, # is_warm_storage_slot
+                    persist_case, # is_not_reverted
+                ))
+    
+    return tuple(gen_list)
 
 TESTING_DATA = gen_test_case()
 
@@ -71,20 +55,6 @@ def test_sstore(
     result: bool,
 ):
     rlc_store = RLCStore()
-
-    ###
-    value_cases = [
-        [bytes([i for i in range(0, 32, 1)]), 0, -1],
-    ]
-    warm_cases = [False, True]
-    persist_cases = [True, False]
-    gen_list = []
-    for value_case in value_cases:
-        for warm_case in warm_cases:
-            for persist_case in persist_cases:
-                gen_list =gen_list.append((value_case[0], value_case[1], value_case[2], warm_case, persist_case))
-    print(gen_list)
-    ###
 
     storage_slot = rlc_store.to_rlc(bytes(reversed(slot_be_bytes)))
     value = rlc_store.to_rlc(bytes(reversed(value_be_bytes)))
