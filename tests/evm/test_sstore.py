@@ -23,35 +23,35 @@ from zkevm_specs.evm.execution.storage import (
 from zkevm_specs.util import RLCStore, rand_address
 
 TESTING_DATA = (
-    (
+    (   # current_value == new_value, cold, not_reverted
         Transaction(caller_address=rand_address(), callee_address=rand_address()),
         bytes([i for i in range(32, 0, -1)]),
         bytes([i for i in range(0, 32, 1)]),
-        -1, -2,
+        0, -1,
         False,
         True,
     ),
-    (
+    (   # current_value == new_value, warm, not_reverted
         Transaction(caller_address=rand_address(), callee_address=rand_address()),
         bytes([i for i in range(32, 0, -1)]),
         bytes([i for i in range(0, 32, 1)]),
-        -1, -2,
+        0, -1,
         True,
         True,
     ),
-    (
+    (   # current_value == new_value, cold, reverted
         Transaction(caller_address=rand_address(), callee_address=rand_address()),
         bytes([i for i in range(32, 0, -1)]),
         bytes([i for i in range(0, 32, 1)]),
-        -1, -2,
+        0, -1,
         False,
         False,
     ),
-    (
+    (   # current_value == new_value, warm, reverted
         Transaction(caller_address=rand_address(), callee_address=rand_address()),
         bytes([i for i in range(32, 0, -1)]),
         bytes([i for i in range(0, 32, 1)]),
-        -1, -2,
+        0, -1,
         True,
         False,
     ),
