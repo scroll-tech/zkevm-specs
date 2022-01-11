@@ -72,6 +72,20 @@ def test_sstore(
 ):
     rlc_store = RLCStore()
 
+    ###
+    value_cases = [
+        [bytes([i for i in range(0, 32, 1)]), 0, -1],
+    ]
+    warm_cases = [False, True]
+    persist_cases = [True, False]
+    gen_list = []
+    for value_case in value_cases:
+        for warm_case in warm_cases:
+            for persist_case in persist_cases:
+                gen_list =gen_list.append((value_case[0], value_case[1], value_case[2], warm_case, persist_case))
+    print(gen_list)
+    ###
+
     storage_slot = rlc_store.to_rlc(bytes(reversed(slot_be_bytes)))
     value = rlc_store.to_rlc(bytes(reversed(value_be_bytes)))
     value_prev = value + value_prev_diff
