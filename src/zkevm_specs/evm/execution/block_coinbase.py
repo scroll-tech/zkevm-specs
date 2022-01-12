@@ -8,9 +8,11 @@ def coinbase(instruction: Instruction):
     instruction.constrain_equal(opcode, Opcode.COINBASE)
     address = instruction.stack_push()
     # in real circuit also check address raw data is 160 bit length (20 bytes)
-    # check block table for coinbase address 
-    instruction.constrain_equal(address,
-        instruction.block_lookup(BlockContextFieldTag.Coinbase))
+    # check block table for coinbase address
+    instruction.constrain_equal(
+        address,
+        instruction.bytes_to_rlc(instruction.int_to_bytes(instruction.block_lookup(BlockContextFieldTag.Coinbase), 20)),
+    )
 
     instruction.constrain_same_context_state_transition(
         opcode,
