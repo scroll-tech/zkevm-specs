@@ -9,6 +9,7 @@ from .execution import (
     jumpi,
     coinbase,
     caller,
+    scmp,
 )
 from .execution_state import ExecutionState
 from .instruction import Instruction
@@ -54,6 +55,8 @@ def verify_step(
         coinbase(instruction)
     elif instruction.curr.execution_state == ExecutionState.CALLER:
         caller(instruction)
+    elif instruction.curr.execution_state == ExecutionState.SCMP:
+        scmp(instruction)
     # Error cases
     else:
         raise NotImplementedError
