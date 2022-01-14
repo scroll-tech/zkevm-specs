@@ -3,6 +3,7 @@ from typing import Sequence, Tuple
 from ..instruction import Instruction, Transition
 from ..opcode import Opcode
 
+
 def scmp(instruction: Instruction):
     opcode = instruction.opcode_lookup(True)
 

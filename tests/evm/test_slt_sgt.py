@@ -43,7 +43,6 @@ TESTING_DATA = (
         hex_to_word("00"),
         hex_to_word("01"),
     ),
-
     # a < 0 and b >= 0
     (
         Opcode.SLT,
@@ -69,7 +68,6 @@ TESTING_DATA = (
         hex_to_word("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
         hex_to_word("01"),
     ),
-
     # a < 0 and b < 0
     (
         Opcode.SLT,
@@ -95,7 +93,6 @@ TESTING_DATA = (
         hex_to_word("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe"),
         hex_to_word("01"),
     ),
-
     # a_hi == b_hi and a_lo < b_lo and a < 0 and b < 0
     (
         Opcode.SLT,
@@ -121,7 +118,6 @@ TESTING_DATA = (
         hex_to_word("ffffffffffffffffffffffffffffffff11111111111111111111111111111111"),
         hex_to_word("01"),
     ),
-
     # a_hi == b_hi and a_lo < b_lo and a >= 0 and b >= 0
     (
         Opcode.SLT,
@@ -147,7 +143,6 @@ TESTING_DATA = (
         hex_to_word("1111111111111111111111111111111144444444444444444444444444444443"),
         hex_to_word("01"),
     ),
-
     # both equal
     (
         Opcode.SLT,
@@ -161,7 +156,6 @@ TESTING_DATA = (
         RAND_2,
         hex_to_word("00"),
     ),
-
     # more cases where contiguous bytes are different
     (
         Opcode.SLT,
@@ -188,6 +182,7 @@ TESTING_DATA = (
         hex_to_word("01"),
     ),
 )
+
 
 @pytest.mark.parametrize("opcode, a_bytes, b_bytes, res_bytes", TESTING_DATA)
 def test_slt_sgt(opcode: Opcode, a_bytes: bytes, b_bytes: bytes, res_bytes: bytes):
