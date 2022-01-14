@@ -13,15 +13,21 @@ def scmp(instruction: Instruction):
     c = instruction.stack_push()
 
     # decode RLC to bytes for a and b
+    # Note: `rlc_to_bytes` returns the bytes in big endian form. In order to
+    # match the specs and circuit implementation, we transform them to
+    # little endian form (which is the default form returned by `query_word`
     a8s = instruction.rlc_to_bytes(a, 32)
     b8s = instruction.rlc_to_bytes(b, 32)
     c8s = instruction.rlc_to_bytes(c, 32)
+    a8s.reverse()
+    b8s.reverse()
+    c8s.reverse()
 
-    cc = int.from_bytes(c8s, "big")
-    a_hi = int.from_bytes(a8s[:16], "big")
-    a_lo = int.from_bytes(a8s[16:], "big")
-    b_hi = int.from_bytes(b8s[:16], "big")
-    b_lo = int.from_bytes(b8s[16:], "big")
+    cc = int.from_bytes(c8s, "little")
+    a_hi = int.from_bytes(a8s[16:32], "little")
+    a_lo = int.from_bytes(a8s[0:16], "little")
+    b_hi = int.from_bytes(b8s[16:32], "little")
+    b_lo = int.from_bytes(b8s[0:16], "little")
 
     a_lt_b = (a_hi < b_hi) or ((a_hi == b_hi) and (a_lo < b_lo))
     b_lt_a = (b_hi < a_hi) or ((b_hi == a_hi) and (b_lo < a_lo))
@@ -30,13 +36,13 @@ def scmp(instruction: Instruction):
     instruction.constrain_bool(cc)
 
     # a >=0 and b < 0
-    if a8s[0] < 128 and b8s[0] >= 128:
+    if a8s[31] < 128 and b8s[31] >= 128:
         instruction.constrain_equal(
             instruction.select(is_sgt, 1, 0),
             cc,
         )
     # b >= 0 and a < 0
-    elif b8s[0] < 128 and a8s[0] >= 128:
+    elif b8s[31] < 128 and a8s[31] >= 128:
         instruction.constrain_equal(
             instruction.select(is_sgt, 0, 1),
             cc,

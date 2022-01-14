@@ -29,9 +29,9 @@ else:
 		result = 0
 ```
 where:
-- `a_0` and `b_0` represent the most significant bytes of `a` and `b` respectively.
+- `a_0` and `b_0` represent the most significant bytes of `a` and `b` respectively, which in little endian form is `a[31]`.
 - `a_0 >= 128` (same for `b`) signifies that `a` (same for `b`) is a negative number.
-- `a_hi = a[0..16]` and `a_lo = a[16..32]` (same for `b`) with `a` (same for `b`) being represented in the big-endian form.
+- `a_hi = a[16:32]` and `a_lo = a[0:16]` (same for `b`) with `a` (same for `b`) being represented in the big-endian form.
 
 ## Constraints
 - `OpcodeId` check:
@@ -54,4 +54,4 @@ where:
 
 ## Code
 
-See [`slt_sgt.py`](../../src/zkevm_specs/evm/execution/slt_sgt.py)
+See [`slt_sgt.py`](src/zkevm_specs/evm/execution/slt_sgt.py)
