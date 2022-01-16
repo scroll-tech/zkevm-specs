@@ -3,9 +3,9 @@ from typing import Sequence, List
 import random
 
 from zkevm_specs.encoding import u256_to_u8s, U256, u8s_to_u64s
-from zkevm_specs.opcode.div import check_div
+from zkevm_specs.opcode.div_mod import check_div_mod
 
-def test_div():
+def test_div_mod():
     dividend = random.randint(0, 2 ** 256)
     divisor = random.randint(1, dividend)
     quotient = dividend // divisor

@@ -3,7 +3,7 @@ from typing import Sequence
 from ..encoding import U8, is_circuit_code, U256, u8s_to_u64s
 
 
-def div_common(
+def div_mod_common(
     dividend8s: Sequence[U8],
     divisor8s: Sequence[U8],
     quotient8s: Sequence[U8],
@@ -31,5 +31,5 @@ def div_common(
 
 
 @is_circuit_code
-def check_div(dividend8s, divisor8s, quotient8s, remainder8s, v0):
-    div_common(dividend8s, divisor8s, quotient8s, remainder8s, v0)
+def check_div_mod(dividend8s, divisor8s, quotient8s, remainder8s, v0):
+    div_mod_common(dividend8s, divisor8s, quotient8s, remainder8s, v0)
