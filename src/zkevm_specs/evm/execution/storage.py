@@ -21,7 +21,7 @@ def sload(instruction: Instruction):
     callee_address = instruction.tx_lookup(tx_id, TxContextFieldTag.CalleeAddress)
 
     storage_slot = instruction.stack_pop()
-    warm = instruction.access_list_storage_slot_read(tx_id, callee_address, storage_slot)
+    warm, _ = instruction.access_list_storage_slot_read(tx_id, callee_address, storage_slot)
 
     # TODO: Use intrinsic gas (EIP 2028, 2930)
     dynamic_gas_cost = WARM_STORAGE_READ_COST if warm else COLD_SLOAD_COST

@@ -498,7 +498,7 @@ class Instruction:
             RWTableTag.TxAccessListStorageSlot,
             [tx_id, account_address, storage_slot],
         )
-        return row[-4] - row[-3]
+        return row[-4], row[-3]
 
     def transfer_with_gas_fee(
         self,

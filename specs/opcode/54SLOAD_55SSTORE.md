@@ -19,7 +19,7 @@
 2. state transition:
    - gc
      - `SLOAD`: +5 (2 stack operations + 1 storage reads + 2 access_list reads/writes)
-     - `SSTORE`: +8 otherwise
+     - `SSTORE`: +8
        + 2 stack operations
        + 2 storage reads/writes
        + 2 access_list reads/writes

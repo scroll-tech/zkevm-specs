@@ -62,6 +62,7 @@ def gen_test_cases():
 
 TESTING_DATA = gen_test_cases()
 
+
 @pytest.mark.parametrize(
     "tx, slot_be_bytes, value_be_bytes, value_prev_diff, original_value_diff, warm, result", TESTING_DATA
 )
