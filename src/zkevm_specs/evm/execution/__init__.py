@@ -6,5 +6,7 @@ from .push import *
 from .jump import *
 from .jumpi import *
 from .block_coinbase import *
+from .storage import *
+from .gas import *
 
 # Error cases

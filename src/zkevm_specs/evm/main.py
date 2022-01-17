@@ -1,14 +1,7 @@
 from typing import Sequence
 
 from ..util.arithmetic import RLCStore
-from .execution import (
-    add,
-    begin_tx,
-    push,
-    jump,
-    jumpi,
-    coinbase,
-)
+from .execution import add, begin_tx, push, jump, jumpi, coinbase, sload, sstore
 from .execution_state import ExecutionState
 from .instruction import Instruction
 from .step import StepState
@@ -51,6 +44,10 @@ def verify_step(
         jumpi(instruction)
     elif instruction.curr.execution_state == ExecutionState.COINBASE:
         coinbase(instruction)
+    elif instruction.curr.execution_state == ExecutionState.SLOAD:
+        sload(instruction)
+    elif instruction.curr.execution_state == ExecutionState.SSTORE:
+        sstore(instruction)
     # Error cases
     else:
         raise NotImplementedError

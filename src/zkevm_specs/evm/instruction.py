@@ -145,6 +145,7 @@ class Instruction:
         stack_pointer: Transition = Transition.persistent(),
         memory_size: Transition = Transition.persistent(),
         dynamic_gas_cost: int = 0,
+        state_write_counter: Transition = Transition.persistent(),
     ):
         gas_cost = Opcode(opcode).constant_gas_cost() + dynamic_gas_cost
 
@@ -155,6 +156,7 @@ class Instruction:
             stack_pointer=stack_pointer,
             memory_size=memory_size,
             gas_left=Transition.delta(-gas_cost),
+            state_write_counter=state_write_counter,
         )
 
     def is_zero(self, value: int) -> bool:
@@ -418,6 +420,45 @@ class Instruction:
         )
         return row[-4] - row[-3]
 
+    def storage_slot_write(
+        self,
+        account_address: int,
+        storage_slot: int,
+    ) -> Tuple[int, int, int, int]:
+        row = self.rw_lookup(
+            RW.Write,
+            RWTableTag.AccountStorage,
+            [account_address, storage_slot],
+        )
+        return row[-4], row[-3], row[-2], row[-1]
+
+    def storage_slot_write_with_reversion(
+        self,
+        account_address: int,
+        storage_slot: int,
+        is_persistent: bool = True,
+        rw_counter_end_of_reversion: int = 0,
+    ) -> Tuple[int, int, int, int]:
+        row = self.state_write_with_reversion(
+            RWTableTag.AccountStorage,
+            [account_address, storage_slot],
+            is_persistent,
+            rw_counter_end_of_reversion,
+        )
+        return row[-4], row[-3], row[-2], row[-1]
+
+    def storage_slot_read(
+        self,
+        account_address: int,
+        storage_slot: int,
+    ) -> Tuple[int, int, int, int]:
+        row = self.rw_lookup(
+            RW.Read,
+            RWTableTag.AccountStorage,
+            [account_address, storage_slot],
+        )
+        return row[-4], row[-3], row[-2], row[-1]
+
     def add_storage_slot_to_access_list(
         self,
         tx_id: int,
@@ -446,6 +487,19 @@ class Instruction:
         )
         return row[-4] - row[-3]
 
+    def access_list_storage_slot_read(
+        self,
+        tx_id: int,
+        account_address: int,
+        storage_slot: int,
+    ) -> bool:
+        row = self.rw_lookup(
+            RW.Read,
+            RWTableTag.TxAccessListStorageSlot,
+            [tx_id, account_address, storage_slot],
+        )
+        return row[-4] - row[-3]
+
     def transfer_with_gas_fee(
         self,
         sender_address: int,
@@ -467,3 +521,28 @@ class Instruction:
             is_persistent,
             rw_counter_end_of_reversion,
         )
+
+    def gas_refund_write_with_reversion(
+        self,
+        tx_id: int,
+        is_persistent: bool,
+        rw_counter_end_of_reversion: int,
+    ) -> int:
+        row = self.state_write_with_reversion(
+            RWTableTag.TxRefund,
+            [tx_id],
+            is_persistent,
+            rw_counter_end_of_reversion,
+        )
+        return row[-4], row[-3]
+
+    def gas_refund_read(
+        self,
+        tx_id: int,
+    ) -> int:
+        row = self.rw_lookup(
+            RW.Read,
+            RWTableTag.TxRefund,
+            [tx_id],
+        )
+        return row[-4], row[-3]
