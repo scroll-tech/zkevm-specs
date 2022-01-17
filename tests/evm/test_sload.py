@@ -55,6 +55,10 @@ def test_sload(tx: Transaction, slot_be_bytes: bytes, warm: bool, result: bool):
     bytecode = Bytecode(f"7f{slot_be_bytes.hex()}5400")
     bytecode_hash = rlc_store.to_rlc(bytecode.hash, 32)
 
+    value = 2
+    value_prev = 0
+    value_committed = 0
+
     tables = Tables(
         block_table=set(block.table_assignments(rlc_store)),
         tx_table=set(tx.table_assignments(rlc_store)),
@@ -75,7 +79,7 @@ def test_sload(tx: Transaction, slot_be_bytes: bytes, warm: bool, result: bool):
                     0,
                 ),
                 (11, RW.Read, RWTableTag.CallContext, 1, CallContextFieldTag.IsPersistent, 0, result, 0, 0, 0),
-                (12, RW.Read, RWTableTag.Stack, 1, 1023, storage_slot, 0, 0, 0, 0),
+                (12, RW.Read, RWTableTag.Stack, 1, 1023, 0, storage_slot, 0, 0, 0),
                 (
                     13,
                     RW.Read,
@@ -88,7 +92,7 @@ def test_sload(tx: Transaction, slot_be_bytes: bytes, warm: bool, result: bool):
                     0,
                     0,
                 ),
-                (14, RW.Read, RWTableTag.AccountStorage, tx.callee_address, storage_slot, 0, 0, 0, tx.id, 0),
+                (14, RW.Read, RWTableTag.AccountStorage, tx.callee_address, storage_slot, 0, value, value_prev, tx.id, value_committed),
                 (
                     15,
                     RW.Write,
@@ -101,7 +105,7 @@ def test_sload(tx: Transaction, slot_be_bytes: bytes, warm: bool, result: bool):
                     0,
                     0,
                 ),
-                (16, RW.Write, RWTableTag.Stack, 1, 1023, 0, 0, 0, 0, 0),
+                (16, RW.Write, RWTableTag.Stack, 1, 1023, 0, value, 0, 0, 0),
             ]
             + (
                 []
