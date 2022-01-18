@@ -246,7 +246,7 @@ def test_sstore(
                 opcode_source=bytecode_hash,
                 program_counter=67,
                 stack_pointer=1024,
-                state_write_counter=2,
+                state_write_counter=3,
                 gas_left=0,
             ),
         ],

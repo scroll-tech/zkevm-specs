@@ -101,6 +101,6 @@ def sstore(instruction: Instruction):
         rw_counter=Transition.delta(8),
         program_counter=Transition.delta(1),
         stack_pointer=Transition.delta(2),
-        state_write_counter=Transition.delta(2),
+        state_write_counter=Transition.delta(3),
         dynamic_gas_cost=dynamic_gas_cost,
     )
