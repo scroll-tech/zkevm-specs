@@ -101,6 +101,24 @@ def test_sstore(
     if not warm:
         expected_gas_cost = expected_gas_cost + COLD_SLOAD_COST
 
+    old_gas_refund = 15000
+    gas_refund = old_gas_refund
+    if value_prev != value:
+        if original_value == value_prev:
+            if original_value != 0 and value == 0:
+                gas_refund = gas_refund + SSTORE_CLEARS_SCHEDULE
+        else:
+            if original_value != 0:
+                if value_prev == 0:
+                    gas_refund = gas_refund - SSTORE_CLEARS_SCHEDULE
+                if value == 0:
+                    gas_refund = gas_refund + SSTORE_CLEARS_SCHEDULE
+            if original_value == value:
+                if original_value == 0:
+                    gas_refund = gas_refund + SSTORE_SET_GAS - SLOAD_GAS
+                else:
+                    gas_refund = gas_refund + SSTORE_RESET_GAS - SLOAD_GAS
+
     tables = Tables(
         block_table=set(block.table_assignments(rlc_store)),
         tx_table=set(tx.table_assignments(rlc_store)),
@@ -147,7 +165,7 @@ def test_sstore(
                     tx.id,
                     original_value,
                 ),
-                (8, RW.Read, RWTableTag.TxRefund, tx.id, 0, 0, 999, 0, 0, 0),
+                (8, RW.Read, RWTableTag.TxRefund, tx.id, 0, 0, old_gas_refund, 0, 0, 0),
                 (
                     9,
                     RW.Write,
@@ -172,7 +190,7 @@ def test_sstore(
                     0,
                     0,
                 ),
-                (11, RW.Write, RWTableTag.TxRefund, tx.id, 0, 0, 999, 0, 0, 0),
+                (11, RW.Write, RWTableTag.TxRefund, tx.id, 0, 0, gas_refund, old_gas_refund, 0, 0),
             ]
             + (
                 []
@@ -185,11 +203,11 @@ def test_sstore(
                         tx.id,
                         0,
                         0,
+                        old_gas_refund,
+                        gas_refund,
                         0,
-                        999,
                         0,
-                        0,
-                    ),  # TODO: gas_refund cannot be really tested yet
+                    ),
                     (
                         15,
                         RW.Write,
