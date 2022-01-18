@@ -55,7 +55,7 @@ def sstore(instruction: Instruction):
     new_value = instruction.stack_pop()
     warm, _ = instruction.access_list_storage_slot_read(tx_id, callee_address, storage_slot)
     current_value, _, txid, original_value = instruction.storage_slot_read(callee_address, storage_slot)
-    assert tx_id == txid
+    instruction.constrain_equal(tx_id, txid)
 
     # TODO: Use intrinsic gas (EIP 2028, 2930)
     if current_value == new_value:
@@ -94,7 +94,8 @@ def sstore(instruction: Instruction):
     instruction.add_storage_slot_to_access_list_with_reversion(
         tx_id, callee_address, storage_slot, is_persistent, rw_counter_end_of_reversion
     )
-    instruction.gas_refund_write_with_reversion(tx_id, is_persistent, rw_counter_end_of_reversion)
+    new_gas_refund, _ = instruction.gas_refund_write_with_reversion(tx_id, is_persistent, rw_counter_end_of_reversion)
+    instruction.constrain_equal(gas_refund, new_gas_refund)
 
     instruction.constrain_same_context_state_transition(
         opcode,
