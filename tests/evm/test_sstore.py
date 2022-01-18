@@ -26,23 +26,21 @@ from zkevm_specs.util import RLCStore, rand_address
 def gen_test_cases():
     value_cases = [
         [bytes([i for i in range(0, 32, 1)]), 0, -1],  # value_prev == value
-        # # "value_prev != value, original_value == value_prev, original_value == 0" case is skipped because inconvenient to generate for now
-        # [
-        #     bytes([i for i in range(0, 32, 1)]),
-        #     -1,
-        #     -1,
-        # ],  # value_prev != value, original_value == value_prev, original_value != 0
-        # [bytes([i for i in range(0, 32, 1)]), -1, -2],  # value_prev != value, original_value != value_prev
-        # [
-        #     bytes([i for i in range(0, 32, 1)]),
-        #     -1,
-        #     0,
-        # ],  # value_prev != value, original_value != value_prev, value == original_value
+        # "value_prev != value, original_value == value_prev, original_value == 0" case is skipped because inconvenient to generate for now
+        [
+            bytes([i for i in range(0, 32, 1)]),
+            -1,
+            -1,
+        ],  # value_prev != value, original_value == value_prev, original_value != 0
+        [bytes([i for i in range(0, 32, 1)]), -1, -2],  # value_prev != value, original_value != value_prev
+        [
+            bytes([i for i in range(0, 32, 1)]),
+            -1,
+            0,
+        ],  # value_prev != value, original_value != value_prev, value == original_value
     ]
-    # warm_cases = [False, True]
-    # persist_cases = [True, False]
-    warm_cases = [False]
-    persist_cases = [True]
+    warm_cases = [False, True]
+    persist_cases = [True, False]
 
     test_cases = []
     for value_case in value_cases:
