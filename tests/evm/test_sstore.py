@@ -39,10 +39,10 @@ def gen_test_cases():
         #     0,
         # ],  # value_prev != value, original_value != value_prev, value == original_value
     ]
-    warm_cases = [False, True]
-    persist_cases = [True, False]
-    # warm_cases = [False]
-    # persist_cases = [True]
+    # warm_cases = [False, True]
+    # persist_cases = [True, False]
+    warm_cases = [False]
+    persist_cases = [True]
 
     test_cases = []
     for value_case in value_cases:
@@ -52,9 +52,9 @@ def gen_test_cases():
                     (
                         Transaction(caller_address=rand_address(), callee_address=rand_address()),  # tx
                         bytes([i for i in range(32, 0, -1)]),  # storage_slot
-                        value_case[0],
-                        value_case[1],
-                        value_case[2],  # new_value, value_prev_diff, original_value_diff
+                        value_case[0],  # new_value
+                        value_case[1],  # value_prev_diff
+                        value_case[2],  # original_value_diff
                         warm_case,  # is_warm_storage_slot
                         persist_case,  # is_not_reverted
                     )
