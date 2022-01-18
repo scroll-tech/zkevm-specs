@@ -492,7 +492,7 @@ class Instruction:
         tx_id: int,
         account_address: int,
         storage_slot: int,
-    ) -> bool:
+    ) -> Tuple[int, int]:
         row = self.rw_lookup(
             RW.Read,
             RWTableTag.TxAccessListStorageSlot,
@@ -527,7 +527,7 @@ class Instruction:
         tx_id: int,
         is_persistent: bool,
         rw_counter_end_of_reversion: int,
-    ) -> int:
+    ) -> Tuple[int, int]:
         row = self.state_write_with_reversion(
             RWTableTag.TxRefund,
             [tx_id],
@@ -539,7 +539,7 @@ class Instruction:
     def gas_refund_read(
         self,
         tx_id: int,
-    ) -> int:
+    ) -> Tuple[int, int]:
         row = self.rw_lookup(
             RW.Read,
             RWTableTag.TxRefund,

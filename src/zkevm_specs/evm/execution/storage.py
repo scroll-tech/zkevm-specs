@@ -53,7 +53,7 @@ def sstore(instruction: Instruction):
 
     storage_slot = instruction.stack_pop()
     new_value = instruction.stack_pop()
-    warm = instruction.access_list_storage_slot_read(tx_id, callee_address, storage_slot)
+    warm, _ = instruction.access_list_storage_slot_read(tx_id, callee_address, storage_slot)
     current_value, _, txid, original_value = instruction.storage_slot_read(callee_address, storage_slot)
     assert tx_id == txid
 
