@@ -122,7 +122,7 @@ def test_sstore(
                     0,
                     0,
                 ),
-                (3, RW.Read, RWTableTag.CallContext, 1, CallContextFieldTag.IsPersistent, 0, result, 0, 0),
+                (3, RW.Read, RWTableTag.CallContext, 1, CallContextFieldTag.IsPersistent, 0, result, 0, 0 ,0),
                 (4, RW.Read, RWTableTag.Stack, 1, 1022, 0, storage_slot, 0, 0, 0),
                 (5, RW.Read, RWTableTag.Stack, 1, 1023, 0, value, 0, 0, 0),
                 (
