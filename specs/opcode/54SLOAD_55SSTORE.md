@@ -29,8 +29,8 @@
      - `SSTORE`: -2
    - pc + 1
    - state_write_counter
-       - `SLOAD`: +1
-       - `SSTORE`: +2
+       - `SLOAD`: +1 (access_list)
+       - `SSTORE`: +3 (storage & access_list & gas_refund)
    - gas:
      - `SLOAD`:
        + the accessed address is warm: gas + WARM_STORAGE_READ_COST
