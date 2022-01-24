@@ -410,6 +410,9 @@ class Instruction:
     def memory_write(self, memory_address: int, call_id: Optional[int] = None) -> int:
         return self.memory_lookup(RW.Write, memory_address, call_id)
 
+    def memory_read(self, memory_address: int, call_id: Optional[int] = None) -> int:
+        return self.memory_lookup(RW.Read, memory_address, call_id)
+
     def memory_lookup(self, rw: RW, memory_address: int, call_id: Optional[int] = None) -> int:
         if call_id is None:
             call_id = self.curr.call_id

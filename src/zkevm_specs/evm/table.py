@@ -24,6 +24,7 @@ class FixedTableTag(IntEnum):
     table.
     """
 
+    Range5 = auto()  # value, 0, 0
     Range16 = auto()  # value, 0, 0
     Range32 = auto()  # value, 0, 0
     Range64 = auto()  # value, 0, 0
@@ -41,6 +42,8 @@ class FixedTableTag(IntEnum):
     StackUnderflow = auto()  # opcode, stack_pointer, 0
 
     def table_assignments(self) -> Sequence[Array4]:
+        if self == FixedTableTag.Range5:
+            return [(self, i, 0, 0) for i in range(5)]
         if self == FixedTableTag.Range16:
             return [(self, i, 0, 0) for i in range(16)]
         elif self == FixedTableTag.Range32:
@@ -79,6 +82,8 @@ class FixedTableTag(IntEnum):
             ValueError("Unreacheable")
 
     def range_table_tag(range: int) -> FixedTableTag:
+        if range == 5:
+            return FixedTableTag.Range5
         if range == 16:
             return FixedTableTag.Range16
         elif range == 32:
