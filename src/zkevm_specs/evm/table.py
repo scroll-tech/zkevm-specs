@@ -232,6 +232,22 @@ class CallContextFieldTag(IntEnum):
     StateWriteCounter = auto()
 
 
+class TxLogFieldTag(IntEnum):
+    """
+    Tag for RWTable lookup with tag TxLog, which is used to index specific
+    field of TxLog.
+    """
+    # The following are write-only data inside a transaction, they will be written in
+    # State circuit directly.
+    Address = auto()  # address of the contract that generated the event
+    Topics = auto()  # list of topics provided by the contract
+    Data = auto()  # log data in bytes
+    BlockNumber = auto()  # block number which logs are belong to
+    TxHash = auto()    # hash of the transaction
+    TxIndex = auto()   # index of the transaction in the block
+    Removed = auto()   # The Removed field is true if this log was reverted due to a chain reorganisation.
+
+
 class LookupUnsatFailure(Exception):
     def __init__(self, table_name: str, inputs: Tuple[int, ...]) -> None:
         self.inputs = inputs
