@@ -162,6 +162,7 @@ class RWTableTag(IntEnum):
     CallContext = auto()
     Stack = auto()
     Memory = auto()
+    TxLog = auto()
 
     # For state writes which affect future execution before reversion, we need
     # to write them with reversion when the write might fail.
@@ -246,6 +247,8 @@ class TxLogFieldTag(IntEnum):
     TxHash = auto()    # hash of the transaction
     TxIndex = auto()   # index of the transaction in the block
     Removed = auto()   # The Removed field is true if this log was reverted due to a chain reorganisation.
+    TopicLength = auto()
+    DataLength = auto()
 
 
 class LookupUnsatFailure(Exception):
@@ -330,6 +333,10 @@ class Tables:
     def tx_lookup(self, inputs: Sequence[int]) -> Array4:
         assert len(inputs) <= 4
         return _lookup("tx_table", self.tx_table, inputs)
+
+    def tx_log_lookup(self, inputs: Sequence[int]) -> Array4:
+        assert len(inputs) <= 10
+        return _lookup("rw_table", self.rw_table, inputs)
 
     def bytecode_lookup(self, inputs: Sequence[int]) -> Array4:
         assert len(inputs) <= 4

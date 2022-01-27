@@ -1,5 +1,5 @@
 from ..instruction import Instruction, Transition
-from ..table import CallContextFieldTag
+from ..table import CallContextFieldTag, TxLogFieldTag
 from ..opcode import Opcode
 
 
@@ -12,16 +12,29 @@ def caller(instruction: Instruction):
     mstart = instruction.stack_pop()
     msize = instruction.stack_pop()
     topics = []
-    for _ in range(opcode - Opcode.LOG0):
-        topics.append(instruction.stack_pop())
+    for i in range(opcode - Opcode.LOG0):
+        stack_topic = instruction.stack_pop()
+        topic = instruction.tx_log_lookup(TxLogFieldTag.Topics, i)
+        # TODO: constrain its equality
+        instruction.constrain_equal(stack_topic, topic)
+
 
     # check memory copy
     memory_data = []
     call_id = instruction.call_context_lookup(CallContextFieldTag.CallerId)
-    for address in range(mstart, msize + 1):
-        memory_data.append(instruction.memory_read(address, call_id))
+    for i in range(opcode - Opcode.LOG0):
+        address = mstart + i
+        data_byte = instruction.memory_read(address, call_id)
+        data_lookup = instruction.tx_log_lookup(TxLogFieldTag.Data, i)
+        # TODO: constrain its equality
+        instruction.constrain_equal(data_byte, data_lookup)
+
 
     # TODO: check log data added in state
+    # check topics in logs
+    for _ in range(opcode - Opcode.LOG0):
+        topics.append(instruction.stack_pop())
+    # check data in logs
 
     # calculate dynamic gas cost
     _, memory_expansion_cost = instruction.memory_expansion_constant_length(mstart, msize)
