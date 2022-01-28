@@ -17,8 +17,12 @@ from .gas import *
 from .jump import *
 from .jumpi import *
 from .push import *
+from .block_coinbase import *
+from .caller import *
 from .slt_sgt import *
-
+from .callvalue import *
+from .calldatasize import *
+from .log import *
 
 EXECUTION_STATE_IMPL: Dict[ExecutionState, Callable] = {
     ExecutionState.BeginTx: begin_tx,
@@ -35,4 +39,5 @@ EXECUTION_STATE_IMPL: Dict[ExecutionState, Callable] = {
     ExecutionState.PUSH: push,
     ExecutionState.SCMP: scmp,
     ExecutionState.GAS: gas,
+    ExecutionState.LOG: log,
 }

@@ -14,14 +14,14 @@ from zkevm_specs.evm import (
 from zkevm_specs.util import rand_address, rand_fp, RLC, U160
 
 
-TESTING_DATA = (0x030201, rand_address())
+TESTING_DATA = (0x030201,)  # rand_address()#
 
 
 @pytest.mark.parametrize("log", TESTING_DATA)
-def test_log():
+def test_log(log):
     randomness = rand_fp()
-    mstart = 100
-    msize = 20
+    mstart = 10
+    msize = 2
     # for now only test first topic log scenario
     topic1 = 0x030201
 
@@ -36,16 +36,16 @@ def test_log():
         bytecode_table=set(bytecode.table_assignments(randomness)),
         rw_table=set(
             [
-                (1, RW.Read, RWTableTag.Stack, 1, 1023, 0, RLC(mstart, randomness, 8), 0, 0, 0),
-                (2, RW.Read, RWTableTag.Stack, 1, 1022, 0, RLC(msize, randomness, 2), 0, 0, 0),
+                (1, RW.Read, RWTableTag.Stack, 1, 1020, 0, RLC(mstart, randomness, 8), 0, 0, 0),
+                (2, RW.Read, RWTableTag.Stack, 1, 1021, 0, RLC(msize, randomness, 8), 0, 0, 0),
                 # read topic
-                (3, RW.Read, RWTableTag.Stack, 1, 1021, 0, RLC(topic1, randomness, 32), 0, 0, 0),
-                (4, RW.Read, RWTableTag.Memory, 1, 9, 0, 10, 0, 0, 0),
-                (5, RW.Read, RWTableTag.Memory, 1, 10, 0, 20, 0, 0, 0),
+                (3, RW.Read, RWTableTag.Stack, 1, 1022, 0, RLC(topic1, randomness, 32), 0, 0, 0),
+                (4, RW.Read, RWTableTag.Memory, 1, 11, 0, 10, 0, 0, 0),
+                (5, RW.Read, RWTableTag.Memory, 1, 12, 0, 20, 0, 0, 0),
                 # write tx log with topic and data
                 (6, RW.Write, RWTableTag.TxLog, 0, 0, TxLogFieldTag.Topics, RLC(topic1, randomness, 32), 0, 0, 0),
                 (7, RW.Write, RWTableTag.TxLog, 0, 0, TxLogFieldTag.Data, 10, 0, 0, 0),
-                (8, RW.Write, RWTableTag.TxLog, 0, 1, TxLogFieldTag.Date, 20, 0, 0, 0),
+                (8, RW.Write, RWTableTag.TxLog, 0, 1, TxLogFieldTag.Data, 20, 0, 0, 0),
                 # TODO: add contract address
             ]
         ),
@@ -56,19 +56,20 @@ def test_log():
         tables=tables,
         steps=[
             StepState(
-                execution_state=ExecutionState.COINBASE,
+                execution_state=ExecutionState.LOG,
                 rw_counter=1,
                 call_id=1,
                 is_root=True,
                 is_create=False,
                 code_source=bytecode_hash,
                 program_counter=0,
-                stack_pointer=1024,
-                gas_left=2,
+                stack_pointer=1020,
+                gas_left=394,
+                state_write_counter=0,
             ),
             StepState(
                 execution_state=ExecutionState.STOP,
-                rw_counter=4,
+                rw_counter=5,
                 call_id=1,
                 is_root=True,
                 is_create=False,
@@ -76,6 +77,7 @@ def test_log():
                 program_counter=1,
                 stack_pointer=1023,
                 gas_left=0,
+                state_write_counter=1,
             ),
         ],
     )

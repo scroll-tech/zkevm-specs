@@ -244,9 +244,11 @@ class TxLogFieldTag(IntEnum):
     Topics = auto()  # list of topics provided by the contract
     Data = auto()  # log data in bytes
     BlockNumber = auto()  # block number which logs are belong to
-    TxHash = auto()    # hash of the transaction
-    TxIndex = auto()   # index of the transaction in the block
-    Removed = auto()   # The Removed field is true if this log was reverted due to a chain reorganisation.
+    TxHash = auto()  # hash of the transaction
+    TxIndex = auto()  # index of the transaction in the block
+    # The Removed field is true if this log was reverted due to a chain reorganisation.
+    # it is intermediate value, hence not count for state.
+    # Removed = auto()
     TopicLength = auto()
     DataLength = auto()
 
@@ -336,6 +338,8 @@ class Tables:
 
     def tx_log_lookup(self, inputs: Sequence[int]) -> Array4:
         assert len(inputs) <= 10
+        # evm only write tx log
+
         return _lookup("rw_table", self.rw_table, inputs)
 
     def bytecode_lookup(self, inputs: Sequence[int]) -> Array4:

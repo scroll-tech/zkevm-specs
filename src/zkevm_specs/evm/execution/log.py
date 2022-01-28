@@ -3,38 +3,45 @@ from ..table import CallContextFieldTag, TxLogFieldTag
 from ..opcode import Opcode
 
 
-def caller(instruction: Instruction):
+def log(instruction: Instruction):
     opcode = instruction.opcode_lookup(True)
-
     # constrain op in [log0, log4] range
     instruction.range_lookup(opcode - Opcode.LOG0, 5)
     # pop `mstart`, `msize` from stack
-    mstart = instruction.stack_pop()
-    msize = instruction.stack_pop()
+    mstart = instruction.rlc_to_int_exact(instruction.stack_pop(), 8)
+    msize = instruction.rlc_to_int_exact(instruction.stack_pop(), 8)
     topics = []
+    # tx_id = instruction.call_context_lookup(CallContextFieldTag.TxId)
+    # rw_counter_end_of_reversion = instruction.call_context_lookup(
+    #     CallContextFieldTag.RwCounterEndOfReversion
+    # )
+    # is_persistent = instruction.call_context_lookup(CallContextFieldTag.IsPersistent)
+
     for i in range(opcode - Opcode.LOG0):
         stack_topic = instruction.stack_pop()
-        topic = instruction.tx_log_lookup(TxLogFieldTag.Topics, i)
-        # TODO: constrain its equality
-        instruction.constrain_equal(stack_topic, topic)
-
+        topics.append(stack_topic)
+        # instruction.tx_log_write_with_reversion(TxLogFieldTag.Topics,is_persistent,
+        #     rw_counter_end_of_reversion, i)
 
     # check memory copy
     memory_data = []
-    call_id = instruction.call_context_lookup(CallContextFieldTag.CallerId)
-    for i in range(opcode - Opcode.LOG0):
-        address = mstart + i
-        data_byte = instruction.memory_read(address, call_id)
-        data_lookup = instruction.tx_log_lookup(TxLogFieldTag.Data, i)
-        # TODO: constrain its equality
-        instruction.constrain_equal(data_byte, data_lookup)
+    for i in range(msize):
+        address = mstart + i + 1
+        data_byte = instruction.memory_read(address, instruction.curr.call_id)
+        memory_data.append(data_byte)
 
-
-    # TODO: check log data added in state
     # check topics in logs
-    for _ in range(opcode - Opcode.LOG0):
-        topics.append(instruction.stack_pop())
+    for i in range(len(topics)):
+        topic_in_log = instruction.tx_log_lookup(TxLogFieldTag.Topics, i)
+        instruction.constrain_equal(topic_in_log, topics[i])
+
     # check data in logs
+    for i in range(len(memory_data)):
+        byte_in_log = instruction.tx_log_lookup(TxLogFieldTag.Data, i)
+        instruction.constrain_equal(byte_in_log, memory_data[i])
+
+    # TODO: check contract address validity, for now, contract address not stored
+    # in any table
 
     # calculate dynamic gas cost
     _, memory_expansion_cost = instruction.memory_expansion_constant_length(mstart, msize)

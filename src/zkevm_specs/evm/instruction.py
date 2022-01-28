@@ -22,6 +22,7 @@ from .table import (
     Tables,
     FixedTableTag,
     TxContextFieldTag,
+    TxLogFieldTag,
     RW,
     RWTableTag,
 )
@@ -71,6 +72,7 @@ class Instruction:
     program_counter_offset: int = 0
     stack_pointer_offset: int = 0
     state_write_counter_offset: int = 0
+    log_index_offset: int = 0
 
     def __init__(
         self,
@@ -323,6 +325,9 @@ class Instruction:
 
     def tx_context_lookup(self, tx_id: int, field_tag: TxContextFieldTag) -> Union[int, RLC]:
         return self.tables.tx_lookup([tx_id, field_tag, 0])[3]
+
+    def tx_log_lookup(self, field_tag: TxContextFieldTag, index: int = 0) -> Union[int, RLC]:
+        return self.tables.tx_log_lookup([self.curr.log_index, field_tag, index])[3]
 
     def tx_calldata_lookup(self, tx_id: int, index: int) -> int:
         return self.tables.tx_lookup([tx_id, TxContextFieldTag.CallData, index])[3]
