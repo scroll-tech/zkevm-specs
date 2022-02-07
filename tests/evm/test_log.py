@@ -7,6 +7,7 @@ from zkevm_specs.evm import (
     Tables,
     RWTableTag,
     TxLogFieldTag,
+    CallContextFieldTag,
     RW,
     Block,
     Bytecode,
@@ -15,6 +16,7 @@ from zkevm_specs.util import rand_address, rand_fp, RLC, U160
 
 
 TESTING_DATA = (0x030201,)  # rand_address()#
+CALLEE_ADDRESS = 0xFF
 
 
 @pytest.mark.parametrize("log", TESTING_DATA)
@@ -46,7 +48,20 @@ def test_log(log):
                 (6, RW.Write, RWTableTag.TxLog, 0, 0, TxLogFieldTag.Topics, RLC(topic1, randomness, 32), 0, 0, 0),
                 (7, RW.Write, RWTableTag.TxLog, 0, 0, TxLogFieldTag.Data, 10, 0, 0, 0),
                 (8, RW.Write, RWTableTag.TxLog, 0, 1, TxLogFieldTag.Data, 20, 0, 0, 0),
-                # TODO: add contract address
+                # for contract address
+                (
+                    9,
+                    RW.Read,
+                    RWTableTag.CallContext,
+                    1,
+                    CallContextFieldTag.CalleeAddress,
+                    0,
+                    CALLEE_ADDRESS,
+                    0,
+                    0,
+                    0,
+                ),
+                (10, RW.Write, RWTableTag.TxLog, 0, 0, TxLogFieldTag.Address, CALLEE_ADDRESS, 0, 0, 0),
             ]
         ),
     )

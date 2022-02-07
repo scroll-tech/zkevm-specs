@@ -1,6 +1,7 @@
 from ..instruction import Instruction, Transition
-from ..table import CallContextFieldTag, TxLogFieldTag
+from ..table import CallContextFieldTag, TxLogFieldTag, TxContextFieldTag
 from ..opcode import Opcode
+from ...util.param import LOG_STATIC_GAS
 
 
 def log(instruction: Instruction):
@@ -30,23 +31,28 @@ def log(instruction: Instruction):
         data_byte = instruction.memory_read(address, instruction.curr.call_id)
         memory_data.append(data_byte)
 
-    # check topics in logs
+    # constrain topics in logs
     for i in range(len(topics)):
         topic_in_log = instruction.tx_log_lookup(TxLogFieldTag.Topics, i)
         instruction.constrain_equal(topic_in_log, topics[i])
 
-    # check data in logs
+    # constrain data in logs
     for i in range(len(memory_data)):
         byte_in_log = instruction.tx_log_lookup(TxLogFieldTag.Data, i)
         instruction.constrain_equal(byte_in_log, memory_data[i])
 
-    # TODO: check contract address validity, for now, contract address not stored
-    # in any table
+    # check contract address validity, use call context's  callee address as contract address when it is
+    # contract call, if in contract creation, constructing it as creating address in witness generation process. .
+    # contract_address = instruction.tx_context_lookup(tx_id, TxContextFieldTag.CalleeAddress)
+    contract_address = instruction.call_context_lookup(CallContextFieldTag.CalleeAddress)
+    address = instruction.tx_log_lookup(TxLogFieldTag.Address)
+    instruction.constrain_equal(contract_address, address)
 
+    # omit block number constraint even it is set in the op code explicitly, because by default the circuit only handle
+    # current block
     # calculate dynamic gas cost
     _, memory_expansion_cost = instruction.memory_expansion_constant_length(mstart, msize)
-    log_static_gas = 375
-    dynamic_gas = log_static_gas * (opcode - Opcode.LOG0) + 8 * msize + memory_expansion_cost
+    dynamic_gas = LOG_STATIC_GAS * (opcode - Opcode.LOG0) + 8 * msize + memory_expansion_cost
 
     rw_counter_diff = 2 + opcode - Opcode.LOG0 + 1
     instruction.step_state_transition_in_same_context(
