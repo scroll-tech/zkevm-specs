@@ -238,6 +238,7 @@ class TxLogFieldTag(IntEnum):
     Tag for RWTable lookup with tag TxLog, which is used to index specific
     field of TxLog.
     """
+
     # The following are write-only data inside a transaction, they will be written in
     # State circuit directly.
     Address = auto()  # address of the contract that generated the event
