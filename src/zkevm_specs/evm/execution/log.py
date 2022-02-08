@@ -49,7 +49,7 @@ def log(instruction: Instruction):
     instruction.constrain_equal(contract_address, address)
 
     # omit block number constraint even it is set in the op code explicitly, because by default the circuit only handle
-    # current block
+    # current block, otherwise, block context lookup is required.
     # calculate dynamic gas cost
     _, memory_expansion_cost = instruction.memory_expansion_constant_length(mstart, msize)
     dynamic_gas = LOG_STATIC_GAS * (opcode - Opcode.LOG0) + 8 * msize + memory_expansion_cost

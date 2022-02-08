@@ -17,6 +17,15 @@ from zkevm_specs.util import rand_address, rand_fp, RLC, U160
 
 TESTING_DATA = (0x030201,)  # rand_address()#
 CALLEE_ADDRESS = 0xFF
+# TODO: dynamic topic and data generation, so gas will be calculate dynamically.
+# TESTING_DATA = (0x030201, topics, data, mstart, msize)
+# TESTING_DATA = (0x030201, [0x030201], data, 10, 2)
+# TESTING_DATA = (0x030201, [0x030201,0x0f0e0d], data, 10, 100)
+# TESTING_DATA = (0x030201, [0x030201,0x0f0e0d, 0x0d8f01], data, 100, 20)
+# TESTING_DATA = (0x030201, [0x030201,0x0f0e0d, 0x0d8f01, 0x0aa213],
+# data, 1000, 3000)
+
+# topics = [0x030201, 0x0f0e0d, 0x0d8f01,  0x0aa213]
 
 
 @pytest.mark.parametrize("log", TESTING_DATA)
@@ -40,7 +49,7 @@ def test_log(log):
             [
                 (1, RW.Read, RWTableTag.Stack, 1, 1020, 0, RLC(mstart, randomness, 8), 0, 0, 0),
                 (2, RW.Read, RWTableTag.Stack, 1, 1021, 0, RLC(msize, randomness, 8), 0, 0, 0),
-                # read topic
+                # write topics
                 (3, RW.Read, RWTableTag.Stack, 1, 1022, 0, RLC(topic1, randomness, 32), 0, 0, 0),
                 (4, RW.Read, RWTableTag.Memory, 1, 11, 0, 10, 0, 0, 0),
                 (5, RW.Read, RWTableTag.Memory, 1, 12, 0, 20, 0, 0, 0),

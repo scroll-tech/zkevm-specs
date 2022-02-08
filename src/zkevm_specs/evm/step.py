@@ -60,6 +60,7 @@ class StepState:
         last_callee_id: int = 0,
         last_callee_return_data_offset: int = 0,
         last_callee_return_data_length: int = 0,
+        log_index: int = 0,
     ) -> None:
         self.execution_state = execution_state
         self.rw_counter = rw_counter
@@ -75,3 +76,4 @@ class StepState:
         self.last_callee_id = last_callee_id
         self.last_callee_return_data_offset = last_callee_return_data_offset
         self.last_callee_return_data_length = last_callee_return_data_length
+        self.log_index = log_index

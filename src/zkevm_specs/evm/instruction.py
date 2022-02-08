@@ -327,7 +327,7 @@ class Instruction:
         return self.tables.tx_lookup([tx_id, field_tag, 0])[3]
 
     def tx_log_lookup(self, field_tag: TxContextFieldTag, index: int = 0) -> Union[int, RLC]:
-        return self.tables.tx_log_lookup([self.curr.log_index, field_tag, index])[3]
+        return self.rw_lookup(RW.Write, RWTableTag.TxLog, [self.curr.log_index, index, field_tag])[-4]
 
     def tx_calldata_lookup(self, tx_id: int, index: int) -> int:
         return self.tables.tx_lookup([tx_id, TxContextFieldTag.CallData, index])[3]
