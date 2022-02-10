@@ -24,6 +24,7 @@ class FixedTableTag(IntEnum):
     table.
     """
 
+    Range5 = auto()  # value, 0, 0
     Range16 = auto()  # value, 0, 0
     Range32 = auto()  # value, 0, 0
     Range64 = auto()  # value, 0, 0
@@ -41,6 +42,8 @@ class FixedTableTag(IntEnum):
     StackUnderflow = auto()  # opcode, stack_pointer, 0
 
     def table_assignments(self) -> Sequence[Array4]:
+        if self == FixedTableTag.Range5:
+            return [(self, i, 0, 0) for i in range(5)]
         if self == FixedTableTag.Range16:
             return [(self, i, 0, 0) for i in range(16)]
         elif self == FixedTableTag.Range32:
@@ -79,6 +82,8 @@ class FixedTableTag(IntEnum):
             ValueError("Unreacheable")
 
     def range_table_tag(range: int) -> FixedTableTag:
+        if range == 5:
+            return FixedTableTag.Range5
         if range == 16:
             return FixedTableTag.Range16
         elif range == 32:
@@ -157,6 +162,7 @@ class RWTableTag(IntEnum):
     CallContext = auto()
     Stack = auto()
     Memory = auto()
+    TxLog = auto()
 
     # For state writes which affect future execution before reversion, we need
     # to write them with reversion when the write might fail.
@@ -225,6 +231,27 @@ class CallContextFieldTag(IntEnum):
     GasLeft = auto()
     MemorySize = auto()
     StateWriteCounter = auto()
+
+
+class TxLogFieldTag(IntEnum):
+    """
+    Tag for RWTable lookup with tag TxLog, which is used to index specific
+    field of TxLog.
+    """
+
+    # The following are write-only data inside a transaction, they will be written in
+    # State circuit directly.
+    Address = auto()  # address of the contract that generated the event
+    Topics = auto()  # list of topics provided by the contract
+    Data = auto()  # log data in bytes
+    BlockNumber = auto()  # block number which logs are belong to
+    TxHash = auto()  # hash of the transaction
+    TxIndex = auto()  # index of the transaction in the block
+    # The Removed field is true if this log was reverted due to a chain reorganisation.
+    # it is intermediate value, hence not count for state.
+    # Removed = auto()
+    TopicLength = auto()
+    DataLength = auto()
 
 
 class LookupUnsatFailure(Exception):
@@ -309,6 +336,11 @@ class Tables:
     def tx_lookup(self, inputs: Sequence[int]) -> Array4:
         assert len(inputs) <= 4
         return _lookup("tx_table", self.tx_table, inputs)
+
+    def tx_log_lookup(self, inputs: Sequence[int]) -> Array4:
+        assert len(inputs) <= 10
+        # evm only write tx log
+        return _lookup("rw_table", self.rw_table, inputs)
 
     def bytecode_lookup(self, inputs: Sequence[int]) -> Array4:
         assert len(inputs) <= 4

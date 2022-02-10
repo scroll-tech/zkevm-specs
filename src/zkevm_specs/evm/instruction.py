@@ -24,6 +24,7 @@ from .table import (
     TxContextFieldTag,
     RW,
     RWTableTag,
+    TxLogFieldTag,
 )
 
 
@@ -71,6 +72,7 @@ class Instruction:
     program_counter_offset: int = 0
     stack_pointer_offset: int = 0
     state_write_counter_offset: int = 0
+    log_index_offset: int = 0
 
     def __init__(
         self,
@@ -113,6 +115,7 @@ class Instruction:
                 "gas_left",
                 "memory_size",
                 "state_write_counter",
+                "log_index",
             ]
         )
 
@@ -168,6 +171,7 @@ class Instruction:
         memory_size: Transition = Transition.same(),
         state_write_counter: Transition = Transition.same(),
         dynamic_gas_cost: int = 0,
+        log_index: int = 0,
     ):
         self.responsible_opcode_lookup(opcode)
 
@@ -181,6 +185,7 @@ class Instruction:
             gas_left=Transition.delta(-gas_cost),
             memory_size=memory_size,
             state_write_counter=state_write_counter,
+            log_index=Transition.delta(log_index),
             # Always stay same
             call_id=Transition.same(),
             is_root=Transition.same(),
@@ -314,6 +319,9 @@ class Instruction:
     def tx_context_lookup(self, tx_id: int, field_tag: TxContextFieldTag) -> Union[int, RLC]:
         return self.tables.tx_lookup([tx_id, field_tag, 0])[3]
 
+    def tx_log_lookup(self, field_tag: TxContextFieldTag, index: int = 0) -> Union[int, RLC]:
+        return self.rw_lookup(RW.Write, RWTableTag.TxLog, [self.curr.log_index, index, field_tag])[-4]
+
     def tx_calldata_lookup(self, tx_id: int, index: int) -> int:
         return self.tables.tx_lookup([tx_id, TxContextFieldTag.CallData, index])[3]
 
@@ -409,6 +417,9 @@ class Instruction:
 
     def memory_write(self, memory_address: int, call_id: Optional[int] = None) -> int:
         return self.memory_lookup(RW.Write, memory_address, call_id)
+
+    def memory_read(self, memory_address: int, call_id: Optional[int] = None) -> int:
+        return self.memory_lookup(RW.Read, memory_address, call_id)
 
     def memory_lookup(self, rw: RW, memory_address: int, call_id: Optional[int] = None) -> int:
         if call_id is None:

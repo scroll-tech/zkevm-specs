@@ -37,6 +37,9 @@ class StepState:
     # not often used.
     memory_size: int
     state_write_counter: int
+    # log index of current block, this field maybe moved if we find them
+    # not often used.
+    log_index: int
 
     def __init__(
         self,
@@ -51,6 +54,7 @@ class StepState:
         gas_left: int = 0,
         memory_size: int = 0,
         state_write_counter: int = 0,
+        log_index: int = 0,
     ) -> None:
         self.execution_state = execution_state
         self.rw_counter = rw_counter
@@ -63,3 +67,4 @@ class StepState:
         self.gas_left = gas_left
         self.memory_size = memory_size
         self.state_write_counter = state_write_counter
+        self.log_index = log_index

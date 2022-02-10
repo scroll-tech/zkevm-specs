@@ -42,3 +42,6 @@ MAX_REFUND_QUOTIENT_OF_GAS_USED = 5
 MEMORY_EXPANSION_QUAD_DENOMINATOR = 512
 # Coefficient of linear part of memory expansion gas cost
 MEMORY_EXPANSION_LINEAR_COEFF = 3
+
+# log static gas
+LOG_STATIC_GAS = 375
