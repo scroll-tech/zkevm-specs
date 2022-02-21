@@ -33,7 +33,9 @@ def sload(instruction: Instruction):
         tx_id, callee_address, storage_key, is_persistent, rw_counter_end_of_reversion
     )
 
-    dynamic_gas_cost = WARM_STORAGE_READ_COST if is_warm == 1 else COLD_SLOAD_COST
+    dynamic_gas_cost = instruction.select(
+        instruction.is_equal(is_warm, 1), WARM_STORAGE_READ_COST, COLD_SLOAD_COST
+    )
 
     instruction.step_state_transition_in_same_context(
         opcode,
