@@ -70,22 +70,7 @@ def sstore(instruction: Instruction):
     gas_refund, gas_refund_prev = instruction.tx_refund_write_with_reversion(
         tx_id, is_persistent, rw_counter_end_of_reversion
     )
-    # gas_refund_new = gas_refund_prev
-    # if value_prev != value:
-    #     if original_value == value_prev:
-    #         if original_value != 0 and value == 0:
-    #             gas_refund_new = gas_refund_new + SSTORE_CLEARS_SCHEDULE
-    #     else:
-    #         if original_value != 0:
-    #             if value_prev == 0:
-    #                 gas_refund_new = gas_refund_new - SSTORE_CLEARS_SCHEDULE
-    #             if value == 0:
-    #                 gas_refund_new = gas_refund_new + SSTORE_CLEARS_SCHEDULE
-    #         if original_value == value:
-    #             if original_value == 0:
-    #                 gas_refund_new = gas_refund_new + SSTORE_SET_GAS - SLOAD_GAS
-    #             else:
-    #                 gas_refund_new = gas_refund_new + SSTORE_RESET_GAS - SLOAD_GAS
+
     nz_allne_case_refund = instruction.select(
         instruction.is_zero(value_prev),
         gas_refund_prev - SSTORE_CLEARS_SCHEDULE,
@@ -96,9 +81,9 @@ def sstore(instruction: Instruction):
         ),
     )
     nz_ne_ne_case_refund = instruction.select(
-        instruction.is_equal(original_value, value),
-        nz_allne_case_refund + SSTORE_RESET_GAS - SLOAD_GAS,
+        1 - instruction.is_equal(original_value, value),
         nz_allne_case_refund,
+        nz_allne_case_refund + SSTORE_RESET_GAS - SLOAD_GAS,
     )
     ne_ne_case_refund = instruction.select(
         1 - instruction.is_zero(original_value),
