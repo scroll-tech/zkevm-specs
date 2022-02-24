@@ -93,19 +93,19 @@ def sstore(instruction: Instruction):
         nz_ne_ne_case_refund,
         instruction.select(
             instruction.is_equal(original_value, value),
-            gas_refund + SSTORE_SET_GAS - SLOAD_GAS,
-            gas_refund,
+            gas_refund_prev + SSTORE_SET_GAS - SLOAD_GAS,
+            gas_refund_prev,
         ),
     )
     gas_refund_new = instruction.select(
         instruction.is_equal(value_prev, value),
-        gas_refund,
+        gas_refund_prev,
         instruction.select(
             instruction.is_equal(original_value, value_prev),
             instruction.select(
                 (1 - instruction.is_zero(original_value)) * instruction.is_zero(value),
-                gas_refund + SSTORE_CLEARS_SCHEDULE,
-                gas_refund,
+                gas_refund_prev + SSTORE_CLEARS_SCHEDULE,
+                gas_refund_prev,
             ),
             ne_ne_case_refund,
         ),
