@@ -99,7 +99,7 @@ def sstore(instruction: Instruction):
                 SSTORE_RESET_GAS,
             ),
             SLOAD_GAS,
-        )
+        ),
     )
     dynamic_gas_cost = instruction.select(is_warm, warm_case_gas, warm_case_gas + COLD_SLOAD_COST)
 
