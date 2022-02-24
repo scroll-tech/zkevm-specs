@@ -70,22 +70,38 @@ def sstore(instruction: Instruction):
     gas_refund, gas_refund_prev = instruction.tx_refund_write_with_reversion(
         tx_id, is_persistent, rw_counter_end_of_reversion
     )
-    gas_refund_new = gas_refund_prev
-    if value_prev != value:
-        if original_value == value_prev:
-            if original_value != 0 and value == 0:
-                gas_refund_new = gas_refund_new + SSTORE_CLEARS_SCHEDULE
-        else:
-            if original_value != 0:
-                if value_prev == 0:
-                    gas_refund_new = gas_refund_new - SSTORE_CLEARS_SCHEDULE
-                if value == 0:
-                    gas_refund_new = gas_refund_new + SSTORE_CLEARS_SCHEDULE
-            if original_value == value:
-                if original_value == 0:
-                    gas_refund_new = gas_refund_new + SSTORE_SET_GAS - SLOAD_GAS
-                else:
-                    gas_refund_new = gas_refund_new + SSTORE_RESET_GAS - SLOAD_GAS
+    # gas_refund_new = gas_refund_prev
+    # if value_prev != value:
+    #     if original_value == value_prev:
+    #         if original_value != 0 and value == 0:
+    #             gas_refund_new = gas_refund_new + SSTORE_CLEARS_SCHEDULE
+    #     else:
+    #         if original_value != 0:
+    #             if value_prev == 0:
+    #                 gas_refund_new = gas_refund_new - SSTORE_CLEARS_SCHEDULE
+    #             if value == 0:
+    #                 gas_refund_new = gas_refund_new + SSTORE_CLEARS_SCHEDULE
+    #         if original_value == value:
+    #             if original_value == 0:
+    #                 gas_refund_new = gas_refund_new + SSTORE_SET_GAS - SLOAD_GAS
+    #             else:
+    #                 gas_refund_new = gas_refund_new + SSTORE_RESET_GAS - SLOAD_GAS
+    ne_ne_case = 0
+
+    gas_refund_new = instruction.select(
+        instruction.is_equal(value_prev, value),
+        gas_refund,
+        instruction.select(
+            instruction.is_equal(original_value, value_prev),
+            instruction.select(
+                (1 - instruction.is_zero(original_value)) * instruction.is_zero(value),
+                gas_refund + SSTORE_CLEARS_SCHEDULE,
+                gas_refund,
+            ),
+            ne_ne_case,
+        ),
+    )
+
     instruction.constrain_equal(gas_refund, gas_refund_new)
 
     warm_case_gas = instruction.select(
