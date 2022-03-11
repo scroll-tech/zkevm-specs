@@ -18,7 +18,7 @@ from .calldatacopy import *
 from .gas import *
 from .jump import *
 from .jumpi import *
-from .mul import *
+from .mul_div_mod import *
 from .origin import *
 from .push import *
 from .slt_sgt import *
@@ -50,5 +50,5 @@ EXECUTION_STATE_IMPL: Dict[ExecutionState, Callable] = {
     ExecutionState.SSTORE: sstore,
     ExecutionState.SELFBALANCE: selfbalance,
     ExecutionState.GASPRICE: gasprice,
-    ExecutionState.MUL: mul,
+    ExecutionState.MUL: mul_add,
 }

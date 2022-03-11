@@ -3,7 +3,7 @@ from ..opcode import Opcode
 from ...util import FQ
 
 
-def mul(instruction: Instruction):
+def mul_add(instruction: Instruction):
     opcode = instruction.opcode_lookup(True)
 
     is_mul, is_div = instruction.pair_select(opcode, Opcode.MUL, Opcode.DIV)
