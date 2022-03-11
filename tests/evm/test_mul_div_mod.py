@@ -46,7 +46,7 @@ TESTING_DATA = (
 
 
 @pytest.mark.parametrize("opcode, a, b, c", TESTING_DATA)
-def test_mul(opcode: Opcode, a: int, b: int, c: Optional[int]):
+def test_mul_div_mod(opcode: Opcode, a: int, b: int, c: Optional[int]):
     randomness = rand_fp()
 
     c = (
