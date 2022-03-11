@@ -286,6 +286,50 @@ class Instruction:
 
         return RLC(diff_bytes, self.randomness), borrow_hi
 
+    def word_to_64s(self, word: RLC) -> Tuple[FQ, ...]:
+        word_le_bytes = self.rlc_to_le_bytes(word)
+        assert len(word_le_bytes) == 32, "Expected word to contain 32 bytes"
+        return tuple(self.bytes_to_fq(word_le_bytes[8 * i : 8 * (i + 1)]) for i in range(4))
+
+    def mul_add_words(self, a: RLC, b: RLC, c: RLC, d: RLC, v0: RLC, v1: RLC, allow_overflow: bool):
+        a64s = self.word_to_64s(a)
+        b64s = self.word_to_64s(b)
+        c64s = self.word_to_64s(c)
+        d64s = self.word_to_64s(d)
+        v0m = self.rlc_to_fq_exact(v0, 9)
+        v1m = self.rlc_to_fq_exact(v1, 9)
+
+        t0 = a64s[0] * b64s[0]
+        t1 = a64s[0] * b64s[1] + a64s[1] * b64s[0]
+        t2 = a64s[0] * b64s[2] + a64s[1] * b64s[1] + a64s[2] * b64s[0]
+        t3 = a64s[0] * b64s[3] + a64s[1] * b64s[2] + a64s[2] * b64s[1] + a64s[3] * b64s[0]
+        overflow = (
+            v1m
+            + a64s[1] * b64s[3]
+            + a64s[2] * b64s[2]
+            + a64s[3] * b64s[1]
+            + a64s[2] * b64s[3]
+            + a64s[3] * b64s[2]
+            + a64s[3] * b64s[3]
+        )
+
+        self.constrain_equal(
+            v0m * (2**128),
+            t0 + t1 * (2**64) + c64s[0] + c64s[1] * (2**64) - d64s[0] - d64s[1] * (2**64),
+        )
+        self.constrain_equal(
+            v1m * (2**128),
+            v0m
+            + t2
+            + t3 * (2**64)
+            + c64s[2]
+            + c64s[3] * (2**64)
+            - d64s[2]
+            - d64s[3] * (2**64),
+        )
+        if allow_overflow == False:
+            self.constrain_zero(overflow)
+
     def mul_word_by_u64(self, multiplicand: RLC, multiplier: FQ) -> Tuple[RLC, FQ]:
         multiplicand_lo, multiplicand_hi = self.word_to_lo_hi(multiplicand)
 
