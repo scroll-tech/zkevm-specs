@@ -1021,8 +1021,8 @@ class Instruction:
         length: Expression,
         rw_counter: Expression,
         log_id: Expression = None,
-    ) -> FQ:
-        return self.tables.copy_lookup(
+    ) -> Tuple[FQ, FQ]:
+        copy_table_row = self.tables.copy_lookup(
             src_id,
             FQ(src_type),
             dst_id,
@@ -1033,4 +1033,5 @@ class Instruction:
             length,
             rw_counter,
             log_id,
-        ).rwc_inc
+        )
+        return copy_table_row.rwc_inc, copy_table_row.value_rlc
