@@ -673,10 +673,10 @@ class KeccakCircuit:
     def __init__(self) -> None:
         self.rows = []
 
-    def add(self, data: bytes, r: FQ):
+    def add(self, data: bytes, r: FQ) -> KeccakCircuit:
         rows: List[KeccakTableRow] = []
-        hash_rlc = RLC(keccak256(RLC(bytes(reversed(data)), r).le_bytes), r).expr()
-        value_rlc = FQ(0)
+        hash_rlc = RLC(keccak256(RLC(bytes(reversed(data)), r, len(data)).le_bytes), r).expr()
+        value_rlc = FQ.zero()
         for i in range(len(data)):
             value_rlc = value_rlc * r + data[i]
             rows.append(
@@ -687,6 +687,7 @@ class KeccakCircuit:
                 )
             )
         self.rows.extend(rows)
+        return self
 
 
 class CopyCircuit:
