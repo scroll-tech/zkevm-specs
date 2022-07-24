@@ -1,4 +1,5 @@
 from ..instruction import Instruction, Transition
+from ..table import CopyDataTypeTag
 from zkevm_specs.util import FQ, RLC
 
 
@@ -19,10 +20,18 @@ def sha3(instruction: Instruction):
     )
     gas_cost = instruction.memory_copier_gas_cost(length, memory_expansion_gas_cost)
 
-    # TODO(rohit): lookup copy table (copy_rwc_inc and rlc_acc)
-    copy_rwc_inc = FQ(0)
-    # TODO(rohit): lookup keccak table (keccak-256 of rlc_acc)
-    keccak256_rlc_acc = FQ(0)
+    copy_rwc_inc, rlc_acc = instruction.copy_lookup(
+        instruction.curr.call_id,
+        CopyDataTypeTag.Memory,
+        instruction.curr.call_id,
+        CopyDataTypeTag.RlcAcc,
+        memory_offset,
+        memory_offset + length,
+        FQ.zero(),
+        length,
+        instruction.curr.rw_counter,
+    )
+    keccak256_rlc_acc = instruction.keccak_lookup(length, rlc_acc)
 
     instruction.constrain_equal(
         keccak256_rlc_acc,
