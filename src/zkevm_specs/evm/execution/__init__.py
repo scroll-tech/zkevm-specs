@@ -11,9 +11,10 @@ from .add_sub import *
 from .addmod import *
 from .address import *
 from .mulmod import *
+from .balance import *
 from .block_ctx import *
 from .blockhash import *
-from .call_staticcall import *
+from .callop import *
 from .calldatasize import *
 from .caller import *
 from .callvalue import *
@@ -21,6 +22,7 @@ from .calldatacopy import *
 from .calldataload import *
 from .codecopy import *
 from .codesize import *
+from .exp import *
 from .gas import *
 from .iszero import *
 from .jump import *
@@ -29,6 +31,7 @@ from .mul_div_mod import *
 from .origin import *
 from .push import *
 from .returndatasize import *
+from .returndatacopy import *
 from .slt_sgt import *
 from .gas import *
 from .gasprice import *
@@ -58,6 +61,7 @@ EXECUTION_STATE_IMPL: Dict[ExecutionState, Callable] = {
     ExecutionState.MUL: mul_div_mod,
     ExecutionState.NOT: not_opcode,
     ExecutionState.ORIGIN: origin,
+    ExecutionState.BALANCE: balance,
     ExecutionState.CALLER: caller,
     ExecutionState.CALLVALUE: callvalue,
     ExecutionState.CALLDATACOPY: calldatacopy,
@@ -71,6 +75,7 @@ EXECUTION_STATE_IMPL: Dict[ExecutionState, Callable] = {
     ExecutionState.JUMPI: jumpi,
     ExecutionState.PUSH: push,
     ExecutionState.RETURNDATASIZE: returndatasize,
+    ExecutionState.RETURNDATACOPY: returndatacopy,
     ExecutionState.SCMP: scmp,
     ExecutionState.GAS: gas,
     ExecutionState.SHA3: sha3,
@@ -80,8 +85,9 @@ EXECUTION_STATE_IMPL: Dict[ExecutionState, Callable] = {
     ExecutionState.GASPRICE: gasprice,
     ExecutionState.EXTCODECOPY: extcodecopy,
     ExecutionState.EXTCODEHASH: extcodehash,
+    ExecutionState.EXP: exp,
     ExecutionState.LOG: log,
-    ExecutionState.CALL_STATICCALL: call_staticcall,
+    ExecutionState.CALL_DELEGATECALL_STATICCALL: callop,
     ExecutionState.ISZERO: iszero,
     ExecutionState.SDIV_SMOD: sdiv_smod,
     ExecutionState.SHL_SHR: shl_shr,

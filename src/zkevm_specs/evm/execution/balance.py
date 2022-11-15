@@ -4,9 +4,9 @@ from ..opcode import Opcode
 from ..table import AccountFieldTag, CallContextFieldTag
 
 
-def extcodehash(instruction: Instruction):
+def balance(instruction: Instruction):
     opcode = instruction.opcode_lookup(True)
-    instruction.constrain_equal(opcode, Opcode.EXTCODEHASH)
+    instruction.constrain_equal(opcode, Opcode.BALANCE)
 
     address = instruction.rlc_to_fq(instruction.stack_pop(), N_BYTES_ACCOUNT_ADDRESS)
 
@@ -19,12 +19,10 @@ def extcodehash(instruction: Instruction):
     if exists == 0:
         instruction.account_read(address, AccountFieldTag.NonExisting)
 
-    code_hash = (
-        instruction.account_read(address, AccountFieldTag.CodeHash) if exists == 1 else RLC(0)
-    )
+    balance = instruction.account_read(address, AccountFieldTag.Balance) if exists == 1 else RLC(0)
 
     instruction.constrain_equal(
-        instruction.select(exists, code_hash.expr(), FQ(0)),
+        instruction.select(exists, balance.expr(), FQ(0)),
         instruction.stack_push(),
     )
 
