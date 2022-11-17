@@ -16,20 +16,6 @@ from zkevm_specs.evm import (
 )
 from zkevm_specs.util import rand_fq, RLC
 
-CallContext = namedtuple(
-    "CallContext",
-    [
-        "is_root",
-        "is_create",
-        "program_counter",
-        "stack_pointer",
-        "gas_left",
-        "memory_size",
-        "reversible_write_counter",
-    ],
-    defaults=[True, False, 232, 1023, 5000, 0, 0],
-)
-
 BYTECODE = Bytecode().call()
 TESTING_DATA_IS_ROOT = ((Transaction(), BYTECODE),)
 
@@ -51,7 +37,11 @@ def test_depth(tx: Transaction, bytecode: Bytecode):
             )
         ),
         bytecode_table=set(bytecode.table_assignments(randomness)),
-        rw_table=set(RWDictionary(24).call_context_read(1, CallContextFieldTag.IsSuccess, 0).rws),
+        rw_table=set(
+            RWDictionary(24)
+            .call_context_read(1, CallContextFieldTag.Depth, 1025)
+            .rws
+        ),
     )
 
     verify_steps(
