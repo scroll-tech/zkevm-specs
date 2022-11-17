@@ -48,6 +48,7 @@ from .return_ import *
 from .extcodecopy import *
 from .oog_constant import *
 from .error_Invalid_jump import *
+from .error_depth import *
 
 
 EXECUTION_STATE_IMPL: Dict[ExecutionState, Callable] = {
@@ -95,4 +96,5 @@ EXECUTION_STATE_IMPL: Dict[ExecutionState, Callable] = {
     ExecutionState.RETURN: return_,
     ExecutionState.ErrorOutOfGasConstant: oog_constant,
     ExecutionState.ErrorInvalidJump: invalid_jump,
+    ExecutionState.ErrorDepth: error_depth,
 }
