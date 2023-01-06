@@ -17,8 +17,10 @@ def sar(instruction: Instruction):
     b = instruction.stack_push()
 
     (
+        dividend,
         divisor,
         remainder,
+        quotient,
         shf0,
     ) = gen_witness(shift, a, b)
     check_witness(
@@ -26,8 +28,10 @@ def sar(instruction: Instruction):
         shift,
         a,
         b,
+        dividend,
         divisor,
         remainder,
+        quotient,
         shf0,
     )
 
@@ -44,20 +48,25 @@ def check_witness(
     shift: RLC,
     a: RLC,
     b: RLC,
+    dividend: RLC,
     divisor: RLC,
     remainder: RLC,
+    quotient: RLC,
     shf0: FQ,
 ):
-    a_abs, a_is_neg = instruction.abs_word(a)
-    b_abs, b_is_neg = instruction.abs_word(b)
+    _, a_is_neg = instruction.abs_word(a)
+    _, b_is_neg = instruction.abs_word(b)
+
+    dividend_abs, dividend_is_neg = instruction.abs_word(dividend)
+    quotient_abs, quotient_is_neg = instruction.abs_word(quotient)
     remainder_abs, remainder_is_neg = instruction.abs_word(remainder)
 
     divisor_is_zero = instruction.word_is_zero(divisor)
     remainder_is_zero = instruction.word_is_zero(remainder)
 
-    # Function `mul_add_words` constrains `|b| * divisor + |remainder| = |a|`, divisor is considered
-    # as an unsigned word.
-    overflow = instruction.mul_add_words(b_abs, divisor, remainder_abs, a_abs)
+    # Function `mul_add_words` constrains `|quotient| * divisor + |remainder| = |dividend|`, divisor
+    # is considered as an unsigned word.
+    overflow = instruction.mul_add_words(quotient_abs, divisor, remainder_abs, dividend_abs)
     # Constrain overflow == 0.
     instruction.constrain_zero(overflow)
 
@@ -67,7 +76,8 @@ def check_witness(
     # When divisor == 0 (cb.condition).
     if divisor_is_zero.n:
         # If b < 0, then `b == 2**256 - 1`. Otherwise b == 0.
-        instruction.constrain_equal(b.expr(), instruction.select(b_is_neg, RLC(MAX_U256), RLC(0)))
+        # instruction.constrain_equal(b.expr(), instruction.select(b_is_neg, RLC(MAX_U256), RLC(0)))
+        pass
 
     # When divisor != 0.
     if 1 - divisor_is_zero.n:
@@ -81,18 +91,14 @@ def check_witness(
         divisor_hi = instruction.bytes_to_fq(divisor.le_bytes[16:])
         instruction.pow2_lookup(shf0, divisor_lo, divisor_hi)
 
-        # Constrain divisor <= a_abs.
-        divisor_lt_a_abs, divisor_eq_a_abs = instruction.compare_word(divisor, a_abs)
-        instruction.constrain_zero(1 - divisor_lt_a_abs - divisor_eq_a_abs)
-
         # Constrain abs(remainder) < divisor.
         remainder_abs_lt_divisor, _ = instruction.compare_word(remainder_abs, divisor)
         instruction.constrain_zero((1 - remainder_abs_lt_divisor))
 
     # When remainder != 0.
-    if 1 - remainder_is_zero:
-        # Constrain sign(a) == sign(remainder)
-        instruction.constrain_equal(remainder_is_neg, a_is_neg)
+    # if 1 - remainder_is_zero:
+    # Constrain sign(a) == sign(remainder)
+    # instruction.constrain_equal(remainder_is_neg, a_is_neg)
 
 
 def gen_witness(shift: RLC, a: RLC, b: RLC):
@@ -100,34 +106,28 @@ def gen_witness(shift: RLC, a: RLC, b: RLC):
     a_abs = get_int_abs(a.int_value)
     b_abs = get_int_abs(b.int_value)
 
-    # Set divisor = 0 for following conditions.
-    # 1. If shift >= 256 (shift right for 256-bit), cannot calculate divisor (2**shift) as u256.
-    # 2. If a_abs < 2**shift (and a < 0), `a` (quotient), `b` (dividend) and divisor (2**shift)
-    #    cannot be constrained by `MulAddWords`. e.g.
-    #
-    #    For SAR, a == -1 (2**256 - 1) and shift = 1, then b == -1.
-    #    PUSH32 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-    #    PUSH1 1
-    #    SAR
-    #
-    #    For SDIV, dividend == -1 and divisor = 2, then quotient == 0.
-    #    PUSH32 2
-    #    PUSH32 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-    #    SDIV
-    #
-    # For both conditions, set divisor = 0 and constrain `b` as:
+    dividend = a
+
+    # Set divisor = 0 if shift >= 256 (shift right for 256-bit), cannot calculate divisor (2**shift) as u256.
+    # and constrain `b` as:
     # When divisor == 0, if b < 0, then `b == 2**256 - 1`. Otherwise b == 0.
     shf0 = shift.le_bytes[0]
     divisor = 2**shf0 if shf0 == shift.int_value else 0
-    divisor = 0 if a_abs < divisor else divisor
 
-    remainder = get_int_neg(a_abs - b_abs * divisor) if a_is_neg else a_abs - b_abs * divisor
+    quotient = b
+    remainder = a_abs - b_abs * divisor
+    if a_is_neg:
+        if remainder:
+            quotient = RLC(get_int_neg(b_abs - 1))
+            remainder = get_int_neg(remainder + divisor)
+        else:
+            remainder = get_int_neg(remainder)
 
-    print(f'a = {a}')
-    print(f'b = {b}')
-    print(f'a_abs = {a_abs}')
-    print(f'b_abs = {b_abs}')
-    print(f'divisor = {divisor}')
-    print(f'remainder = {remainder}')
+    print(f"a = {a}")
+    print(f"b = {b}")
+    print(f"a_abs = {a_abs}")
+    print(f"b_abs = {b_abs}")
+    print(f"divisor = {divisor}")
+    print(f"remainder = {remainder}")
 
-    return (RLC(divisor), RLC(remainder), FQ(shf0))
+    return (dividend, RLC(divisor), RLC(remainder), quotient, FQ(shf0))

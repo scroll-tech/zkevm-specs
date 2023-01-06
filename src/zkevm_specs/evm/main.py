@@ -36,7 +36,8 @@ def verify_steps(
                 )
             )
         except AssertionError as e:
-            print(f'error - {e}')
+            # gupeng
+            raise e
             ok = False
     assert ok == success
 
