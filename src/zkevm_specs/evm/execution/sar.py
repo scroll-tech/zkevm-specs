@@ -1,6 +1,5 @@
 from ...util import (
     FQ,
-    MAX_U256,
     RLC,
     get_int_abs,
     get_int_neg,
@@ -54,9 +53,6 @@ def check_witness(
     quotient: RLC,
     shf0: FQ,
 ):
-    _, a_is_neg = instruction.abs_word(a)
-    _, b_is_neg = instruction.abs_word(b)
-
     dividend_abs, dividend_is_neg = instruction.abs_word(dividend)
     quotient_abs, quotient_is_neg = instruction.abs_word(quotient)
     remainder_abs, remainder_is_neg = instruction.abs_word(remainder)
@@ -71,7 +67,7 @@ def check_witness(
     instruction.constrain_zero(overflow)
 
     # Constrain sign(a) == sign(b).
-    instruction.constrain_equal(a_is_neg, b_is_neg)
+    # instruction.constrain_equal(a_is_neg, b_is_neg)
 
     # When divisor == 0 (cb.condition).
     if divisor_is_zero.n:
@@ -100,6 +96,10 @@ def check_witness(
     # Constrain sign(a) == sign(remainder)
     # instruction.constrain_equal(remainder_is_neg, a_is_neg)
 
+    if dividend_is_neg.n * (1 - remainder_is_zero.n):
+        val, q_overflow = instruction.add_words([b, RLC(1)])
+        # instruction.constrain_equal(quotient.expr(), instruction.select(q_overflow.expr(), RLC(0), val).expr())
+
 
 def gen_witness(shift: RLC, a: RLC, b: RLC):
     a_is_neg = int_is_neg(a.int_value)
@@ -108,21 +108,22 @@ def gen_witness(shift: RLC, a: RLC, b: RLC):
 
     dividend = a
 
-    # Set divisor = 0 if shift >= 256 (shift right for 256-bit), cannot calculate divisor (2**shift) as u256.
-    # and constrain `b` as:
-    # When divisor == 0, if b < 0, then `b == 2**256 - 1`. Otherwise b == 0.
+    # If shift >= 256, set divisor = 0. Since divisor (2**shift) is overflow for u256. Otherwise
+    # divisor != 0 (even if `2**0`). So should constrain `b` when divisor == 0:
+    # If b < 0, then `b == 2**256 - 1`. Otherwise b == 0.
     shf0 = shift.le_bytes[0]
     divisor = 2**shf0 if shf0 == shift.int_value else 0
 
+    # TODO: comment
     quotient = b
     remainder = a_abs - b_abs * divisor
     if a_is_neg:
-        if remainder:
+        if remainder:  # recomander != 0
             quotient = RLC(get_int_neg(b_abs - 1))
-            remainder = get_int_neg(remainder + divisor)
-        else:
-            remainder = get_int_neg(remainder)
+            remainder += divisor
+        remainder = get_int_neg(remainder)
 
+    # TODO
     print(f"a = {a}")
     print(f"b = {b}")
     print(f"a_abs = {a_abs}")
