@@ -36,6 +36,7 @@ def verify_steps(
                 )
             )
         except AssertionError as e:
+            print(f'error - {e}')
             ok = False
     assert ok == success
 
