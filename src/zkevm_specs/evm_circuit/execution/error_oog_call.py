@@ -8,7 +8,7 @@ from ..opcode import Opcode
 
 # Handle the corresponding out of gas errors for CALL, CALLCODE, DELEGATECALL
 # and STATICCALL opcodes.
-def oog_call(instruction: Instruction):
+def error_oog_call(instruction: Instruction):
     # retrieve op code associated to oog call error
     opcode = instruction.opcode_lookup(True)
     is_call, is_callcode, is_delegatecall, is_staticcall = instruction.multiple_select(
@@ -21,7 +21,7 @@ def oog_call(instruction: Instruction):
     tx_id = instruction.call_context_lookup(CallContextFieldTag.TxId)
 
     # init CallGadget to handle stack vars.
-    call = CallGadget(instruction, FQ(0), is_call, is_callcode, is_delegatecall)
+    call = CallGadget(instruction, FQ(0), is_call, is_callcode, is_delegatecall, is_staticcall)
 
     # TODO: handle PrecompiledContract oog cases
 

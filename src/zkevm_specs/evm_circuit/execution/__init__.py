@@ -52,14 +52,18 @@ from .sar import sar
 from .sdiv_smod import sdiv_smod
 from .sha3 import sha3
 from .shl_shr import shl_shr
+from .create import create
+from .signextend import *
 from .stop import stop
 from .return_revert import *
 from .extcodecopy import *
-from .oog_constant import *
-from .oog_call import *
+from .error_oog_constant import *
+from .error_oog_call import *
 from .error_stack import *
 from .error_invalid_jump import *
 from .error_invalid_opcode import *
+from .error_gas_uint_overflow import *
+from .error_write_protection import *
 
 
 EXECUTION_STATE_IMPL: Dict[ExecutionState, Callable] = {
@@ -98,6 +102,7 @@ EXECUTION_STATE_IMPL: Dict[ExecutionState, Callable] = {
     ExecutionState.SLOAD: sload,
     ExecutionState.SSTORE: sstore,
     ExecutionState.SELFBALANCE: selfbalance,
+    ExecutionState.SIGNEXTEND: signextend,
     ExecutionState.GASPRICE: gasprice,
     ExecutionState.EXTCODECOPY: extcodecopy,
     ExecutionState.EXTCODEHASH: extcodehash,
@@ -111,13 +116,17 @@ EXECUTION_STATE_IMPL: Dict[ExecutionState, Callable] = {
     ExecutionState.SAR: sar,
     ExecutionState.SDIV_SMOD: sdiv_smod,
     ExecutionState.SHL_SHR: shl_shr,
+    ExecutionState.CREATE: create,
+    ExecutionState.CREATE2: create,
     ExecutionState.STOP: stop,
     ExecutionState.RETURN: return_revert,
-    ExecutionState.ErrorInvalidJump: invalid_jump,
-    ExecutionState.ErrorInvalidOpcode: invalid_opcode,
-    ExecutionState.ErrorOutOfGasCall: oog_call,
-    ExecutionState.ErrorOutOfGasConstant: oog_constant,
-    ExecutionState.ErrorStack: stack_error,
+    ExecutionState.ErrorInvalidJump: error_invalid_jump,
+    ExecutionState.ErrorGasUintOverflow: error_gas_uint_overflow,
+    ExecutionState.ErrorOutOfGasCall: error_oog_call,
+    ExecutionState.ErrorInvalidOpcode: error_invalid_opcode,
+    ExecutionState.ErrorOutOfGasConstant: error_oog_constant,
+    ExecutionState.ErrorStack: error_stack,
+    ExecutionState.ErrorWriteProtection: error_write_protection,
     # ExecutionState.ECRECOVER: ,
     # ExecutionState.SHA256: ,
     # ExecutionState.RIPEMD160: ,

@@ -4,7 +4,7 @@ from ..opcode import Opcode
 from ...util import N_BYTES_PROGRAM_COUNTER
 
 
-def invalid_jump(instruction: Instruction):
+def error_invalid_jump(instruction: Instruction):
     opcode = instruction.opcode_lookup(True)
     # current executing op code must be JUMP or JUMPI
     instruction.constrain_in(opcode, [FQ(Opcode.JUMP), FQ(Opcode.JUMPI)])
@@ -15,9 +15,9 @@ def invalid_jump(instruction: Instruction):
     if is_jumpi == FQ(1):
         condition = instruction.stack_pop()
         # if condition is zero, jump will not happen, so constrain condition not zero
-        instruction.constrain_not_zero(condition)
-    # lookup value from bytecode table
-    dest_value = instruction.rlc_to_fq(dest, N_BYTES_PROGRAM_COUNTER)
+        instruction.constrain_not_zero_word(condition)
+    # lookup value from bytecode table.  N_BYTES_PROGRAM_COUNTER is 64 bits
+    dest_value = instruction.word_to_u64(dest)
 
     within_range, _ = instruction.compare(dest_value, code_length, N_BYTES_PROGRAM_COUNTER)
 
