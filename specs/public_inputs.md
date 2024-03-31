@@ -117,7 +117,7 @@ synchronize the State Trie.
 ## Data to synchronize the State Trie
 
 In order to synchronize the State Trie after a new block (assuming we have the state
-of the previous block), we need the at least the following data:
+of the previous block), we need at least the following data:
 
 - For each tx
     - GasPrice: 256 bits
@@ -188,7 +188,7 @@ later be "uncompressed" (opened) from a contract.
 
 The commitment defined in EIP 4844 uses a different field than our circuits, so
 opening it in a circuit is very expensive.  Instead, we must prove the equivalence
-of the committed raw public inputs (outisde of the circuits) with the witnessed
+of the committed raw public inputs (outside of the circuits) with the witnessed
 raw public inputs (inside the circuits), with the help of the PublicInputs
 circuit.
 
@@ -219,10 +219,6 @@ Notes:
 - [1] `Aggregation0` circuit is the top level aggregation circuit which is verified in an L1 contract.
 - With this approach, once we cross the `Aggregation0` circuit, the verification cost of each proof is independent of the "real" number of public inputs (i.e. the number of transactions, the size of call data, the number of block fields, etc.)
 - Calculating an RLC of values in a contract is cheap (it just needs `MULMOD`, `ADDMOD`)
-
-The following diagram shows the the public input approach using the RLC shortcut:
-
-![](./public_inputs.rev1.png)
 
 ## Verify a KZG BLS commitment inside a circuit
 
@@ -255,6 +251,8 @@ This is because:
 
 # PublicInputs Circuit
 
+Before adapting advanced compression [EIP-4844](https://eips.ethereum.org/EIPS/eip-4844), the preliminary compresssion strategy is via keccak on public data, i.e. `keccak(PublicInputsCircuit:raw_public_inputs)`, and the final hash digest will be provided on verifier side as public input. Digest will be verified in public circuit via lookup. Hashing digest is in 256 bits, so it's splitted into 2 field value namely, `digest[0:128]` as `pi_keccak.lo()`,`digest[128:256]` as `pi_keccak.hi()` respectively.
+
 ## Setup
 
 All the necessary public data is arranged in a single array of elements (called
@@ -263,17 +261,15 @@ All the necessary public data is arranged in a single array of elements (called
 
 ## Public Inputs
 
-- `rand_rpi`: Randomness used to "compress" the raw public inputs
-- `rpi_rlc`: Random Linear Combination of the raw public inputs (using `rand_rpi` as randomness)
+- `pi_keccak`: keccak digest of public data.
 - `chain_id`: Chain ID, used to match the Chain ID public input used in the Tx Circuit
 - `state_root`: State Root of current block, used to match the State Root of current block public input used in the State Circuit
 - `state_root_prev`: State Root of previous block, used to match the State Root of previous block public input used in the State Circuit
 
 ## Behaviour
 
-First, the circuit calculates the Random Linear Combination of a column
-containing the raw public inputs array, and verifies that the result matches
-the `rpi_rlc` passed via public inputs using `rand_rpi` as randomness.
+First, the circuit aggregate raw public inputs array as keccak input, then lookup keccak table, verifying that the inputs/digest pair matches
+the `pi_keccak` passed via public inputs.
 
 Second, the circuit proves that the contained `block_table -> value` and
 `tx_table -> {tx_id, index, value}` columns correspond to the correct sections
@@ -290,11 +286,8 @@ required by the `block_table` (used by the EVM circuit).  In the future we want
 to calculate the block hash in a circuit, so we will need to extend the block
 fields to match every field found in the block header.
 
-NOTE: The Word values (256 bits) that appear in the `raw_public_inputs` are not
-RLC encoded because we may use a different approach to encode Words to avoid
-requiring a shared randomness among all circuits.  See
-https://github.com/privacy-scaling-explorations/zkevm-specs/issues/216
-The reference code temporarily encodes Words in fields (which is insecure due
-to collisions), and will be updated once we reach an agreement on issue 216.
-
 Please refer to `src/zkevm-specs/public_inputs.py`.
+
+> Deprecated: the following diagram shows the OLD design of public input approach using the RLC shortcut.
+
+![](./public_inputs_deprecated.rev1.png)

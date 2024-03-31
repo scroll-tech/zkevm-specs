@@ -1,6 +1,6 @@
 import pytest
 
-from zkevm_specs.evm import (
+from zkevm_specs.evm_circuit import (
     AccountFieldTag,
     Block,
     Bytecode,
@@ -14,32 +14,33 @@ from zkevm_specs.evm import (
 from zkevm_specs.util import (
     EXTRA_GAS_COST_ACCOUNT_COLD_ACCESS,
     GAS_COST_WARM_ACCESS,
-    RLC,
+    EMPTY_CODE_HASH,
+    Word,
     U160,
     U256,
+)
+from common import (
     rand_address,
-    rand_bytes,
-    rand_fq,
     rand_range,
     rand_word,
 )
 
 TESTING_DATA = [
-    (0x30000, 0, 0, True, True),
-    (0x30000, 0, 0, False, True),
-    (0x30000, 200, 1, True, True),
-    (0x30000, 200, 1, False, True),
+    (0x30000, 0, False, True, True),
+    (0x30000, 0, False, False, True),
+    (0x30000, 200, True, True, True),
+    (0x30000, 200, True, False, True),
     (
         rand_address(),
         rand_word(),
-        rand_range(2),
+        rand_range(2) == 0,
         rand_range(2) == 0,
         True,  # persistent call
     ),
     (
         rand_address(),
         rand_word(),
-        rand_range(2),
+        rand_range(2) == 0,
         rand_range(2) == 0,
         False,  # reverted call
     ),
@@ -47,10 +48,8 @@ TESTING_DATA = [
 
 
 @pytest.mark.parametrize("address, balance, exists, is_warm, is_persistent", TESTING_DATA)
-def test_balance(address: U160, balance: U256, exists: int, is_warm: bool, is_persistent: bool):
-    randomness = rand_fq()
-
-    result = balance if exists == 1 else 0
+def test_balance(address: U160, balance: U256, exists: bool, is_warm: bool, is_persistent: bool):
+    result = balance if exists else 0
 
     tx_id = 1
     call_id = 1
@@ -61,7 +60,7 @@ def test_balance(address: U160, balance: U256, exists: int, is_warm: bool, is_pe
 
     rw_dictionary = (
         RWDictionary(1)
-        .stack_read(call_id, 1023, RLC(address, randomness))
+        .stack_read(call_id, 1023, Word(address))
         .call_context_read(tx_id, CallContextFieldTag.TxId, tx_id)
         .call_context_read(
             tx_id, CallContextFieldTag.RwCounterEndOfReversion, rw_counter_end_of_reversion
@@ -75,26 +74,24 @@ def test_balance(address: U160, balance: U256, exists: int, is_warm: bool, is_pe
             rw_counter_of_reversion=rw_counter_end_of_reversion - reversible_write_counter,
         )
     )
-    if exists == 1:
-        rw_dictionary.account_read(address, AccountFieldTag.Balance, RLC(balance, randomness))
-    else:
-        rw_dictionary.account_read(
-            address, AccountFieldTag.NonExisting, RLC(1 - exists, randomness)
-        )
+    rw_dictionary.account_read(
+        address, AccountFieldTag.CodeHash, Word(EMPTY_CODE_HASH if exists else 0)
+    )
+    if exists:
+        rw_dictionary.account_read(address, AccountFieldTag.Balance, Word(balance))
 
-    rw_table = set(rw_dictionary.stack_write(call_id, 1023, RLC(result, randomness)).rws)
+    rw_table = set(rw_dictionary.stack_write(call_id, 1023, Word(result)).rws)
 
     bytecode = Bytecode().balance()
     tables = Tables(
         block_table=Block(),
         tx_table=set(),
-        bytecode_table=set(bytecode.table_assignments(randomness)),
+        bytecode_table=set(bytecode.table_assignments()),
         rw_table=rw_table,
     )
 
-    bytecode_hash = RLC(bytecode.hash(), randomness)
+    bytecode_hash = Word(bytecode.hash())
     verify_steps(
-        randomness=randomness,
         tables=tables,
         steps=[
             StepState(
@@ -107,11 +104,10 @@ def test_balance(address: U160, balance: U256, exists: int, is_warm: bool, is_pe
                 program_counter=0,
                 stack_pointer=1023,
                 gas_left=GAS_COST_WARM_ACCESS + (not is_warm) * EXTRA_GAS_COST_ACCOUNT_COLD_ACCESS,
-                aux_data=exists,
             ),
             StepState(
                 execution_state=ExecutionState.STOP if is_persistent else ExecutionState.REVERT,
-                rw_counter=8,
+                rw_counter=8 + (1 if exists else 0),
                 call_id=1,
                 is_root=True,
                 is_create=False,

@@ -1,7 +1,6 @@
 import pytest
-
-from typing import Optional
-from zkevm_specs.evm import (
+from random import randrange
+from zkevm_specs.evm_circuit import (
     ExecutionState,
     StepState,
     Opcode,
@@ -11,59 +10,71 @@ from zkevm_specs.evm import (
     Bytecode,
     RWDictionary,
 )
-from zkevm_specs.util import rand_fq, rand_word, RLC
+from zkevm_specs.util import Word
 
 
-NOT_TESTING_DATA = [
-    0,
-    0x030201,
-    0x090807,
-    (1 << 256) - 1,
-    (1 << 256) - 0x030201,
-    rand_word(),
-]
+def gen_test_data():
+    u256_max = 115792089237316195423570985008687907853269984665640564039457584007913129639935
+    a = randrange(u256_max)
+    b = randrange(u256_max)
+
+    op_and = a & b
+    op_or = a | b
+    op_xor = a ^ b
+
+    return [(Opcode.AND, a, b, op_and), (Opcode.OR, a, b, op_or), (Opcode.XOR, a, b, op_xor)]
 
 
-@pytest.mark.parametrize("a", NOT_TESTING_DATA)
-def test_not(a: int):
-    randomness = rand_fq()
+@pytest.mark.parametrize("opcode, a, b, c", gen_test_data())
+def test_byte(opcode: Opcode, a: int, b: int, c: int):
+    a = Word(a)
+    b = Word(b)
+    c = Word(c)
 
-    b = RLC(a ^ ((1 << 256) - 1), randomness)
-    a = RLC(a, randomness)
-
-    bytecode = Bytecode().not_(a)
-    bytecode_hash = RLC(bytecode.hash(), randomness)
+    bytecode = (
+        Bytecode().anD(a, b)
+        if opcode == Opcode.AND
+        else Bytecode().oR(a, b)
+        if opcode == Opcode.OR
+        else Bytecode().xor(a, b)
+    )
+    bytecode_hash = Word(bytecode.hash())
 
     tables = Tables(
-        block_table=set(Block().table_assignments(randomness)),
+        block_table=set(Block().table_assignments()),
         tx_table=set(),
-        bytecode_table=set(bytecode.table_assignments(randomness)),
-        rw_table=set(RWDictionary(9).stack_read(1, 1023, a).stack_write(1, 1023, b).rws),
+        bytecode_table=set(bytecode.table_assignments()),
+        rw_table=set(
+            RWDictionary(9)
+            .stack_read(1, 1022, a)
+            .stack_read(1, 1023, b)
+            .stack_write(1, 1023, c)
+            .rws
+        ),
     )
 
     verify_steps(
-        randomness=randomness,
         tables=tables,
         steps=[
             StepState(
-                execution_state=ExecutionState.NOT,
+                execution_state=ExecutionState.BITWISE,
                 rw_counter=9,
                 call_id=1,
                 is_root=True,
                 is_create=False,
                 code_hash=bytecode_hash,
-                program_counter=33,
-                stack_pointer=1023,
+                program_counter=66,
+                stack_pointer=1022,
                 gas_left=3,
             ),
             StepState(
                 execution_state=ExecutionState.STOP,
-                rw_counter=11,
+                rw_counter=12,
                 call_id=1,
                 is_root=True,
                 is_create=False,
                 code_hash=bytecode_hash,
-                program_counter=34,
+                program_counter=67,
                 stack_pointer=1023,
                 gas_left=0,
             ),

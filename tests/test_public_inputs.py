@@ -1,5 +1,5 @@
 from typing import Union, Callable
-from zkevm_specs.public_inputs import (
+from zkevm_specs.pi_circuit import (
     Witness,
     PublicData,
     public_data2witness,
@@ -7,13 +7,21 @@ from zkevm_specs.public_inputs import (
     Block,
     Transaction,
 )
-from zkevm_specs.util import FQ, U64, U256, U160
+from zkevm_specs.util import FQ, U64, U256, U160, WordOrValue, Word
 import random
 from random import randrange, randbytes
 
 random.seed(1234)
 randomness = FQ(randrange(FQ.field_modulus))
 rand_rpi = randomness  # Simulate a randomness for now
+
+
+def word(v: int) -> WordOrValue:
+    return WordOrValue(Word(v))
+
+
+def value(v: int) -> WordOrValue:
+    return WordOrValue(FQ(v))
 
 
 def verify(
@@ -133,78 +141,50 @@ def override_not_success(override: Callable[[Witness], None]):
     verify(witness, MAX_TXS, MAX_CALLDATA_BYTES, rand_rpi, success=False)
 
 
-def test_bad_rpi_rlc_acc():
-    def override(witness):
-        witness.rows[10].rpi_rlc_acc = FQ(123)
-
-    override_not_success(override)
-
-
-def test_bad_rand_rpi_col():
-    def override(witness):
-        witness.rows[10].rand_rpi = FQ(123)
-
-    override_not_success(override)
-
-
 def test_bad_block_table():
     def override(witness):
-        witness.rows[5].block_table.value = FQ(123)
+        witness.block_table.table[5] = word(123)
 
     override_not_success(override)
 
 
 def test_bad_tx_table_tx_id():
     def override(witness):
-        witness.rows[5].tx_table.tx_id = FQ(123)
+        witness.tx_table.table[5].tx_id = FQ(123)
 
     override_not_success(override)
 
 
 def test_bad_tx_table_index():
     def override(witness):
-        witness.rows[5].tx_table.index = FQ(123)
+        witness.tx_table.table[5].index = FQ(123)
 
     override_not_success(override)
 
 
 def test_bad_tx_table_value():
     def override(witness):
-        witness.rows[5].tx_table.value = FQ(123)
+        witness.tx_table.table[5].value = word(123)
 
     override_not_success(override)
 
 
-def test_bad_rand_rpi_pub():
+def test_bad_keccak_digest():
     def override(witness):
-        witness.public_inputs.rand_rpi = FQ(123)
-
-    override_not_success(override)
-
-
-def test_bad_rand_rpi_rlc_pub():
-    def override(witness):
-        witness.public_inputs.rpi_rlc = FQ(123)
-
-    override_not_success(override)
-
-
-def test_bad_rand_rpi_chain_id_pub():
-    def override(witness):
-        witness.public_inputs.chain_id = FQ(123)
+        witness.public_inputs.pi_keccak = Word(123)
 
     override_not_success(override)
 
 
 def test_bad_rand_rpi_state_root_pub():
     def override(witness):
-        witness.public_inputs.state_root = FQ(123)
+        witness.public_inputs.state_root = word(123)
 
     override_not_success(override)
 
 
 def test_bad_rand_rpi_state_root_prev_pub():
     def override(witness):
-        witness.public_inputs.state_root_prev = FQ(123)
+        witness.public_inputs.state_root_prev = word(123)
 
     override_not_success(override)

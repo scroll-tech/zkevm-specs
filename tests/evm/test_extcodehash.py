@@ -1,6 +1,6 @@
 import pytest
 
-from zkevm_specs.evm import (
+from zkevm_specs.evm_circuit import (
     AccountFieldTag,
     Block,
     Bytecode,
@@ -12,37 +12,35 @@ from zkevm_specs.evm import (
     verify_steps,
 )
 from zkevm_specs.util import (
-    EMPTY_CODE_HASH,
     EXTRA_GAS_COST_ACCOUNT_COLD_ACCESS,
     GAS_COST_WARM_ACCESS,
-    RLC,
+    Word,
     U160,
-    U256,
     keccak256,
+)
+from common import (
     rand_address,
     rand_bytes,
-    rand_fq,
     rand_range,
-    rand_word,
 )
 
 TESTING_DATA = [
-    (0x30000, bytes(), 0, True, True),  # warm empty account
-    (0x30000, bytes(), 0, False, True),  # cold empty account
-    (0x30000, bytes([10, 40]), 1, True, True),  # warm non-empty account
-    (0x30000, bytes([10, 10]), 1, False, True),  # cold non-empty account
-    (0x30000, bytes(), 1, False, True),  # non-empty account with empty code
+    (0x30000, bytes(), False, True, True),  # warm empty account
+    (0x30000, bytes(), False, False, True),  # cold empty account
+    (0x30000, bytes([10, 40]), True, True, True),  # warm non-empty account
+    (0x30000, bytes([10, 10]), True, False, True),  # cold non-empty account
+    (0x30000, bytes(), True, False, True),  # non-empty account with empty code
     (
         rand_address(),
         rand_bytes(100),
-        rand_range(2),
+        rand_range(2) == 0,
         rand_range(2) == 0,
         True,  # persistent call
     ),
     (
         rand_address(),
         rand_bytes(100),
-        rand_range(2),
+        rand_range(2) == 0,
         rand_range(2) == 0,
         False,  # reverted call
     ),
@@ -50,11 +48,9 @@ TESTING_DATA = [
 
 
 @pytest.mark.parametrize("address, code, exists, is_warm, is_persistent", TESTING_DATA)
-def test_extcodehash(address: U160, code: bytes, exists: int, is_warm: bool, is_persistent: bool):
-    randomness = rand_fq()
-
+def test_extcodehash(address: U160, code: bytes, exists: bool, is_warm: bool, is_persistent: bool):
     code_hash = int.from_bytes(keccak256(code), "big")
-    result = code_hash if exists == 1 else 0
+    result = code_hash if exists else 0
 
     tx_id = 1
     call_id = 1
@@ -65,7 +61,7 @@ def test_extcodehash(address: U160, code: bytes, exists: int, is_warm: bool, is_
 
     rw_dictionary = (
         RWDictionary(1)
-        .stack_read(call_id, 1023, RLC(address, randomness))
+        .stack_read(call_id, 1023, Word(address))
         .call_context_read(tx_id, CallContextFieldTag.TxId, tx_id)
         .call_context_read(
             tx_id, CallContextFieldTag.RwCounterEndOfReversion, rw_counter_end_of_reversion
@@ -79,26 +75,22 @@ def test_extcodehash(address: U160, code: bytes, exists: int, is_warm: bool, is_
             rw_counter_of_reversion=rw_counter_end_of_reversion - reversible_write_counter,
         )
     )
-    if exists == 1:
-        rw_dictionary.account_read(address, AccountFieldTag.CodeHash, RLC(code_hash, randomness))
-    else:
-        rw_dictionary.account_read(
-            address, AccountFieldTag.NonExisting, RLC(1 - exists, randomness)
-        )
+    rw_dictionary.account_read(address, AccountFieldTag.CodeHash, Word(code_hash if exists else 0))
 
-    rw_table = set(rw_dictionary.stack_write(call_id, 1023, RLC(result, randomness)).rws)
+    rw_table = set(rw_dictionary.stack_write(call_id, 1023, Word(result)).rws)
 
     bytecode = Bytecode().extcodehash()
     tables = Tables(
         block_table=Block(),
         tx_table=set(),
-        bytecode_table=set(bytecode.table_assignments(randomness)),
+        bytecode_table=set(bytecode.table_assignments()),
         rw_table=rw_table,
     )
 
-    bytecode_hash = RLC(bytecode.hash(), randomness)
+    bytecode_hash = Word(
+        bytecode.hash(),
+    )
     verify_steps(
-        randomness=randomness,
         tables=tables,
         steps=[
             StepState(
@@ -111,7 +103,6 @@ def test_extcodehash(address: U160, code: bytes, exists: int, is_warm: bool, is_
                 program_counter=0,
                 stack_pointer=1023,
                 gas_left=GAS_COST_WARM_ACCESS + (not is_warm) * EXTRA_GAS_COST_ACCOUNT_COLD_ACCESS,
-                aux_data=exists,
             ),
             StepState(
                 execution_state=ExecutionState.STOP if is_persistent else ExecutionState.REVERT,

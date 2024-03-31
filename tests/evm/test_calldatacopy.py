@@ -1,16 +1,13 @@
 import pytest
-from typing import Sequence, Tuple, Mapping
 
-from zkevm_specs.evm import (
+from zkevm_specs.evm_circuit import (
     Opcode,
     ExecutionState,
     StepState,
     verify_steps,
     Tables,
-    RWTableTag,
     CallContextFieldTag,
-    RW,
-    RLC,
+    Word,
     Block,
     Transaction,
     Bytecode,
@@ -19,17 +16,8 @@ from zkevm_specs.evm import (
     CopyDataTypeTag,
 )
 from zkevm_specs.copy_circuit import verify_copy_table
-from zkevm_specs.util import (
-    rand_fq,
-    rand_bytes,
-    GAS_COST_COPY,
-    MAX_N_BYTES_COPY_TO_MEMORY,
-    MEMORY_EXPANSION_QUAD_DENOMINATOR,
-    MEMORY_EXPANSION_LINEAR_COEFF,
-    memory_word_size,
-    memory_expansion,
-)
-
+from zkevm_specs.util import GAS_COST_COPY
+from common import memory_expansion, memory_word_size, rand_fq, rand_bytes
 
 TX_ID = 13
 CALLER_ID = 0
@@ -62,14 +50,14 @@ def test_calldatacopy(
     from_tx: bool,
     call_data_offset: int,
 ):
-    randomness = rand_fq()
+    randomness_keccak = rand_fq()
 
     bytecode = Bytecode().calldatacopy(memory_offset, data_offset, length)
-    bytecode_hash = RLC(bytecode.hash(), randomness)
+    bytecode_hash = Word(bytecode.hash())
 
-    memory_offset_rlc = RLC(memory_offset, randomness)
-    data_offset_rlc = RLC(data_offset, randomness)
-    length_rlc = RLC(length, randomness)
+    memory_offset_word = Word(memory_offset)
+    data_offset_word = Word(data_offset)
+    length_word = Word(length)
     call_data = rand_bytes(call_data_length)
 
     curr_mem_size = memory_word_size(0 if from_tx else call_data_offset + call_data_length)
@@ -99,16 +87,16 @@ def test_calldatacopy(
             code_hash=bytecode_hash,
             program_counter=99,
             stack_pointer=1021,
-            memory_size=curr_mem_size,
+            memory_word_size=curr_mem_size,
             gas_left=gas,
         )
     ]
 
     rw_dictionary = (
         RWDictionary(1)
-        .stack_read(CALL_ID, 1021, memory_offset_rlc)
-        .stack_read(CALL_ID, 1022, data_offset_rlc)
-        .stack_read(CALL_ID, 1023, length_rlc)
+        .stack_read(CALL_ID, 1021, memory_offset_word)
+        .stack_read(CALL_ID, 1022, data_offset_word)
+        .stack_read(CALL_ID, 1023, length_word)
     )
     if from_tx:
         rw_dictionary.call_context_read(CALL_ID, CallContextFieldTag.TxId, TX_ID).call_context_read(
@@ -132,7 +120,7 @@ def test_calldatacopy(
         ]
     )
     copy_circuit = CopyCircuit().copy(
-        randomness,
+        randomness_keccak,
         rw_dictionary,
         TX_ID if from_tx else CALLER_ID,
         CopyDataTypeTag.TxCalldata if from_tx else CopyDataTypeTag.Memory,
@@ -155,22 +143,21 @@ def test_calldatacopy(
             code_hash=bytecode_hash,
             program_counter=100,
             stack_pointer=1024,
-            memory_size=next_mem_size,
+            memory_word_size=next_mem_size,
             gas_left=0,
         )
     )
 
     tables = Tables(
-        block_table=set(Block().table_assignments(randomness)),
-        tx_table=set(tx.table_assignments(randomness)),
-        bytecode_table=set(bytecode.table_assignments(randomness)),
+        block_table=set(Block().table_assignments()),
+        tx_table=set(tx.table_assignments()),
+        bytecode_table=set(bytecode.table_assignments()),
         rw_table=set(rw_dictionary.rws),
         copy_circuit=copy_circuit.rows,
     )
 
-    verify_copy_table(copy_circuit, tables, randomness)
+    verify_copy_table(copy_circuit, tables, randomness_keccak)
     verify_steps(
-        randomness=randomness,
         tables=tables,
         steps=steps,
     )

@@ -1,5 +1,5 @@
 import pytest
-from zkevm_specs.evm import (
+from zkevm_specs.evm_circuit import (
     ExecutionState,
     StepState,
     Opcode,
@@ -9,9 +9,13 @@ from zkevm_specs.evm import (
     Block,
     Bytecode,
 )
-from zkevm_specs.evm.execution.sdiv_smod import get_abs, get_neg, is_neg
-from zkevm_specs.util import rand_fq, rand_word, RLC
-from common import generate_nasty_tests
+from zkevm_specs.util import (
+    Word,
+    get_int_abs,
+    get_int_neg,
+    int_is_neg,
+)
+from common import generate_nasty_tests, rand_word
 
 TESTING_DATA = [
     (Opcode.SDIV, 0xFFFFFF, 0xABC),
@@ -39,37 +43,36 @@ generate_nasty_tests(TESTING_DATA, (Opcode.SDIV, Opcode.SMOD))
 
 @pytest.mark.parametrize("opcode, a, b", TESTING_DATA)
 def test_sdiv_smod(opcode: Opcode, a: int, b: int):
-    a_abs = get_abs(a)
-    b_abs = get_abs(b)
-    a_is_neg = is_neg(a)
-    b_is_neg = is_neg(b)
+    a_abs = get_int_abs(a)
+    b_abs = get_int_abs(b)
+    a_is_neg = int_is_neg(a)
+    b_is_neg = int_is_neg(b)
     if opcode == Opcode.SDIV:
         if b == 0:
             c = 0
         elif a_is_neg == b_is_neg:
             c = a_abs // b_abs
         else:
-            c = get_neg(a_abs // b_abs)
+            c = get_int_neg(a_abs // b_abs)
     else:  # Opcode.SMOD
         if b == 0:
             c = 0
         elif a_is_neg:
-            c = get_neg(a_abs % b_abs)
+            c = get_int_neg(a_abs % b_abs)
         else:
             c = a_abs % b_abs
 
-    randomness = rand_fq()
-    a = RLC(a, randomness)
-    b = RLC(b, randomness)
-    c = RLC(c, randomness)
+    a = Word(a)
+    b = Word(b)
+    c = Word(c)
 
     bytecode = Bytecode().sdiv(a, b) if opcode == Opcode.SDIV else Bytecode().smod(a, b)
-    bytecode_hash = RLC(bytecode.hash(), randomness)
+    bytecode_hash = Word(bytecode.hash())
 
     tables = Tables(
-        block_table=set(Block().table_assignments(randomness)),
+        block_table=set(Block().table_assignments()),
         tx_table=set(),
-        bytecode_table=set(bytecode.table_assignments(randomness)),
+        bytecode_table=set(bytecode.table_assignments()),
         rw_table=set(
             RWDictionary(9)
             .stack_read(1, 1022, a)
@@ -80,7 +83,6 @@ def test_sdiv_smod(opcode: Opcode, a: int, b: int):
     )
 
     verify_steps(
-        randomness=randomness,
         tables=tables,
         steps=[
             StepState(

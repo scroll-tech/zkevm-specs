@@ -1,16 +1,11 @@
-from itertools import chain
 import pytest
-from typing import Mapping, Sequence, Tuple
 
-from zkevm_specs.evm import (
-    AccountFieldTag,
+from zkevm_specs.evm_circuit import (
     Bytecode,
     CallContextFieldTag,
     ExecutionState,
     Opcode,
-    RW,
     RWDictionary,
-    RWTableTag,
     StepState,
     Tables,
     verify_steps,
@@ -19,16 +14,10 @@ from zkevm_specs.evm import (
 )
 from zkevm_specs.copy_circuit import verify_copy_table
 from zkevm_specs.util import (
-    rand_fq,
-    rand_bytes,
-    memory_word_size,
-    memory_expansion,
     GAS_COST_COPY,
-    MAX_N_BYTES_COPY_TO_MEMORY,
-    MEMORY_EXPANSION_QUAD_DENOMINATOR,
-    MEMORY_EXPANSION_LINEAR_COEFF,
-    RLC,
+    Word,
 )
+from common import memory_expansion, memory_word_size, rand_fq
 
 CALL_ID = 1
 CALLEE_ID = 2
@@ -52,21 +41,21 @@ def test_returndatacopy(
     return_data_offset: int,
     return_data_length: int,
 ):
-    randomness = rand_fq()
+    randomness_keccak = rand_fq()
 
-    dest_offset_rlc = RLC(dest_offset, randomness)
-    memory_offset_rlc = RLC(offset, randomness)
-    size_rlc = RLC(size, randomness)
+    dest_offset_word = Word(dest_offset)
+    memory_offset_word = Word(offset)
+    size_word = Word(size)
 
     code = (
         Bytecode()
-        .push32(size_rlc)
-        .push32(memory_offset_rlc)
-        .push32(dest_offset_rlc)
+        .push32(size_word)
+        .push32(memory_offset_word)
+        .push32(dest_offset_word)
         .returndatacopy()
         .stop()
     )
-    code_hash = RLC(code.hash(), randomness)
+    code_hash = Word(code.hash())
 
     # assume return data is at the current largest memory pos
     curr_mem_size = memory_word_size(return_data_offset + return_data_length)
@@ -78,9 +67,9 @@ def test_returndatacopy(
     )
     rw_dictionary = (
         RWDictionary(1)
-        .stack_read(CALL_ID, 1021, dest_offset_rlc)
-        .stack_read(CALL_ID, 1022, memory_offset_rlc)
-        .stack_read(CALL_ID, 1023, size_rlc)
+        .stack_read(CALL_ID, 1021, dest_offset_word)
+        .stack_read(CALL_ID, 1022, memory_offset_word)
+        .stack_read(CALL_ID, 1023, size_word)
         .call_context_read(CALL_ID, CallContextFieldTag.LastCalleeId, CALLEE_ID)
         .call_context_read(
             CALL_ID, CallContextFieldTag.LastCalleeReturnDataLength, return_data_length
@@ -100,7 +89,7 @@ def test_returndatacopy(
             code_hash=code_hash,
             program_counter=99,
             stack_pointer=1021,
-            memory_size=curr_mem_size,
+            memory_word_size=curr_mem_size,
             gas_left=gas,
         ),
     ]
@@ -112,7 +101,7 @@ def test_returndatacopy(
         ]
     )
     copy_circuit = CopyCircuit().copy(
-        randomness,
+        randomness_keccak,
         rw_dictionary,
         CALLEE_ID,
         CopyDataTypeTag.Memory,
@@ -138,7 +127,7 @@ def test_returndatacopy(
             code_hash=code_hash,
             program_counter=100,
             stack_pointer=1024,
-            memory_size=next_mem_size,
+            memory_word_size=next_mem_size,
             gas_left=0,
         )
     )
@@ -146,15 +135,14 @@ def test_returndatacopy(
     tables = Tables(
         block_table=set(),
         tx_table=set(),
-        bytecode_table=set(code.table_assignments(randomness)),
+        bytecode_table=set(code.table_assignments()),
         rw_table=set(rw_dictionary.rws),
         copy_circuit=copy_circuit.rows,
     )
 
-    verify_copy_table(copy_circuit, tables, randomness)
+    verify_copy_table(copy_circuit, tables, randomness_keccak)
 
     verify_steps(
-        randomness=randomness,
         tables=tables,
         steps=steps,
     )
